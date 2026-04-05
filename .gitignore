@@ -1,0 +1,40 @@
+# Vivado 工程文件
+*.jou
+*.log
+*.wdb
+*.out
+*.rpt
+*.msk
+*.bit
+*.bin
+
+# Vivado 项目文件
+*.xpr
+*.xpr_backup
+
+# 缓存目录
+*.cache/
+*.runs/
+*.ip_user_files/
+*.hw/
+*.tmp/
+*..cache/
+
+# 仿真临时目录（保留 sim/*.v 和 sim/*.tcl）
+sim/xsim.dir/
+sim/*.log
+sim/*.jou
+sim/*.pb
+
+# 仿真波形
+*.vcd
+
+# 临时文件
+*~
+*.swp
+.DS_Store
+Thumbs.db
+
+# Python 缓存
+__pycache__/
+*.pyc

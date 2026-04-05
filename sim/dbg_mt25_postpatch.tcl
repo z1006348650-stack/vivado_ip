@@ -1,0 +1,3 @@
+run 2150 ns
+puts "cs=[get_value /tb_flash_driver_mt25/u_core/O_cs] cmd_bit_cnt=[get_value /tb_flash_driver_mt25/u_core/u_flash_model/R_cmd_bit_cnt] cmd_shift=[get_value /tb_flash_driver_mt25/u_core/u_flash_model/R_cmd_shift] cmd_valid=[get_value /tb_flash_driver_mt25/u_core/u_flash_model/R_cmd_valid] last=[get_value /tb_flash_driver_mt25/u_core/W_last_cmd] wel=[get_value /tb_flash_driver_mt25/u_core/u_flash_model/R_wel] state=[get_value /tb_flash_driver_mt25/u_core/dut/cur_state] cnt=[get_value /tb_flash_driver_mt25/u_core/dut/R_clk_cnt] wr=[get_value /tb_flash_driver_mt25/u_core/dut/R_wr_bit_cnt]"
+quit
