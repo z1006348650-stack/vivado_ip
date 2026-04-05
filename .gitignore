@@ -15,8 +15,11 @@
 *.bin
 
 # IP 源文件（需要提交）
+!ip/
 !ip/src/
 !ip/xgui/
+!ip/src/*
+!ip/xgui/*
 
 # IP 中间文件（忽略）
 ip/*/
@@ -24,7 +27,6 @@ ip/*/*/
 ip/*/*/*/
 ip/*/*/*/*/
 ip/*/*/*/*/*/
-!ip/component.xml
 
 # 仿真波形
 *.wdb
