@@ -1,0 +1,41 @@
+# Vivado 工程文件
+*.jou
+*.log
+*..cache/
+*.runs/
+*.sim/
+*.ip_user_files/
+*.hw/
+*.cache/
+*.tmp/
+*.coe
+*.rpt
+*.msk
+*.bit
+*.bin
+
+# IP 源文件（需要提交）
+!ip/src/
+!ip/xgui/
+
+# IP 中间文件（忽略）
+ip/*/
+ip/*/*/
+ip/*/*/*/
+ip/*/*/*/*/
+ip/*/*/*/*/*/
+!ip/component.xml
+
+# 仿真波形
+*.wdb
+*.vcd
+
+# Vivado 项目
+*.xpr
+*.xpr_backup
+
+# 临时文件
+*~
+*.swp
+.DS_Store
+Thumbs.db

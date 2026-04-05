@@ -1,0 +1,12 @@
+../rtl/reset_sync.v
+../rtl/uart_rx.v
+../rtl/uart_tx.v
+../rtl/frame_parser.v
+../rtl/frame_builder.v
+../rtl/axi_lite_master.v
+../rtl/axi_full_master.v
+../rtl/bridge_ctrl.v
+../rtl/uart_axi_bridge.v
+axi_lite_slave_model.v
+axi_full_slave_model.v
+tb_uart_axi_bridge.v
