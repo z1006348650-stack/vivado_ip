@@ -12,8 +12,9 @@ module flash_ctrl #(
     parameter WR_DATA_MAX_LEN    = 256       ,
     parameter FLASH_ADDR_WIDTH   = 32        ,
     parameter integer FLASH_MODEL = 0         ,
+    parameter integer SPI_BUS_WIDTH = 1       ,
     parameter S25_TBPARM_TOP     = 0         ,
-    // 擦除状态轮询超时（单位：系统时钟周期）
+    // Erase-status polling timeout limits, in system clock cycles.
     parameter ERASE_TIMEOUT_4K_CYCLES       = 200000000 ,
     parameter ERASE_TIMEOUT_64K_CYCLES      = 300000000 ,
     // Keep CS# high for a short guard window after erase before issuing the first status poll.
@@ -41,8 +42,8 @@ module flash_ctrl #(
     output [FLASH_ADDR_WIDTH-1:0]                                   O_wr_addr               ,
     output [FLASH_ADDR_WIDTH-1:0]                                   O_rd_addr               ,
     output [FLASH_ADDR_WIDTH-1:0]                                   O_era_addr              ,
-
-
+    output [7:0]                                                    O_wr_cmd                ,
+    output [15:0]                                                   O_wr_cmd_data           ,
     input  [7:0]                                                    I_rd_cmd_data           ,
     output [7:0]                                                    O_rd_cmd                ,
 
@@ -56,7 +57,12 @@ module flash_ctrl #(
     output                                                          O_drv_opt_ok            ,
     output                                                          O_err                   ,
     output                                                          O_timeout_err           ,
-    output [4:0]                                                    O_last_fail_stage
+    output [4:0]                                                    O_last_fail_stage       ,
+    output [7:0]                                                    O_dbg_rd_cmd_data       ,
+    output [7:0]                                                    O_dbg_sr1_shadow        ,
+    output [7:0]                                                    O_dbg_cr1_shadow        ,
+    output [15:0]                                                   O_dbg_wr_cmd_data       ,
+    output [4:0]                                                    O_dbg_cur_state
 
 
     );
@@ -74,9 +80,12 @@ module flash_ctrl #(
     localparam [FLASH_ADDR_WIDTH-1:0] S25_BOTTOM_PARAM_END = 32'h0002_0000;
     localparam [FLASH_ADDR_WIDTH-1:0] S25_TOP_PARAM_BASE   = 32'h01FE_0000;
 
-    // 状态寄存器读取命令：S25 �?0x05，MT25 �?0x70(Flag Status Register)
+    // Status register read command: S25 uses 0x05, MT25/N25Q use 0x70 (Flag Status Register).
     localparam [7:0] STATUS_CMD_S25     = 8'h05;
     localparam [7:0] STATUS_CMD_MT25    = 8'h70;
+    localparam [7:0] CONFIG_CMD_S25     = 8'h35;
+    localparam [7:0] WRITE_REG_CMD_S25  = 8'h01;
+    localparam [7:0] S25_QE_MASK        = 8'h02;
 
     localparam [4:0] IDLE                    = 5'd0;
     localparam [4:0] ERASE_64K               = 5'd1;
@@ -98,8 +107,15 @@ module flash_ctrl #(
     localparam [4:0] WRITE_CHECK_ERR         = 5'd17;
     localparam [4:0] FINISH                  = 5'd18;
     localparam [4:0] CLEAR_STATUS            = 5'd19;
+    localparam [4:0] QE_READ_SR1             = 5'd20;
+    localparam [4:0] QE_READ_SR1_CHECK       = 5'd21;
+    localparam [4:0] QE_READ_CR1             = 5'd22;
+    localparam [4:0] QE_READ_CR1_CHECK       = 5'd23;
+    localparam [4:0] QE_WRITE_REG            = 5'd24;
+    localparam [4:0] QE_READ_CR1_VERIFY      = 5'd25;
+    localparam [4:0] QE_READ_CR1_VERIFY_CHECK= 5'd26;
 
-    // 故障阶段编码（用于上层定位失败来源）
+    // ?????????????????????????????????????????
     localparam [4:0] FAIL_STAGE_NONE                 = 5'd0;
     localparam [4:0] FAIL_STAGE_ERASE_ADDR_INVALID   = 5'd1;
     localparam [4:0] FAIL_STAGE_ERASE_TIMEOUT_64K    = 5'd2;
@@ -111,6 +127,7 @@ module flash_ctrl #(
     localparam [4:0] FAIL_STAGE_WRITE_VERIFY_ERROR   = 5'd8;
     localparam [4:0] FAIL_STAGE_WRITE_OVERFLOW       = 5'd9;
     localparam [4:0] FAIL_STAGE_ERASE_BUSY_NOT_SEEN  = 5'd10;
+    localparam [4:0] FAIL_STAGE_QE_ENABLE_FAILED     = 5'd11;
 
 
     reg [4:0]                                                           cur_state, nxt_state;
@@ -137,7 +154,11 @@ module flash_ctrl #(
     reg [FLASH_ADDR_WIDTH-1:0]               R_wr_addr       ;
     reg [FLASH_ADDR_WIDTH-1:0]               R_rd_addr       ;
     reg [FLASH_ADDR_WIDTH-1:0]               R_era_addr      ;
+    reg [7:0]                                R_wr_cmd        ;
+    reg [15:0]                               R_wr_cmd_data   ;
     reg [7:0]                                R_rd_cmd        ;
+    reg [7:0]                                R_sr1_shadow    ;
+    reg [7:0]                                R_cr1_shadow    ;
     reg [((WR_DATA_MAX_LEN << 3) - 1) : 0]   R_wr_data       ;
 
 
@@ -168,6 +189,10 @@ module flash_ctrl #(
     wire [31:0] W_wr_total_beats;
     wire        W_axis_fire;
     wire        W_wr_count_overflow;
+    wire        W_need_qe_prepare;
+    wire        W_qe_enabled;
+    wire        W_sr1_status_error;
+    wire        W_sr1_unlock_required;
 
     wire        W_err_evt_erase_addr_invalid;
     wire        W_err_evt_erase_timeout_64k;
@@ -179,6 +204,7 @@ module flash_ctrl #(
     wire        W_err_evt_write_status;
     wire        W_err_evt_write_verify;
     wire        W_err_evt_write_overflow;
+    wire        W_err_evt_qe_enable;
     wire        W_err_evt_any;
     wire        W_err_evt_timeout;
     wire [4:0]  W_err_stage_code;
@@ -191,6 +217,8 @@ module flash_ctrl #(
     assign O_wr_addr                         = R_wr_addr;
     assign O_rd_addr                         = R_rd_addr;
     assign O_era_addr                        = R_era_addr;
+    assign O_wr_cmd                          = R_wr_cmd;
+    assign O_wr_cmd_data                     = R_wr_cmd_data;
     assign O_rd_cmd                          = R_rd_cmd;
     assign O_axis_tready                     = R_axis_tready;
     assign O_wr_data                         = R_wr_data;
@@ -199,13 +227,22 @@ module flash_ctrl #(
     assign O_drv_opt_busy                    = R_drv_opt_busy;
     assign O_timeout_err                     = R_timeout_err;
     assign O_last_fail_stage                 = R_last_fail_stage;
+    assign O_dbg_rd_cmd_data                 = I_rd_cmd_data;
+    assign O_dbg_sr1_shadow                  = R_sr1_shadow;
+    assign O_dbg_cr1_shadow                  = R_cr1_shadow;
+    assign O_dbg_wr_cmd_data                 = R_wr_cmd_data;
+    assign O_dbg_cur_state                   = cur_state;
 
-    // 不同 Flash 的忙位与错误位定义不一致，在这里统一抽象�?
+    // ?????Flash ?????????????????????????????????????????????????
     assign W_need_clear_status               = (FLASH_MODEL != FLASH_MODEL_S25FL256S);
     assign W_status_cmd                      = (FLASH_MODEL == FLASH_MODEL_S25FL256S) ? STATUS_CMD_S25 : STATUS_CMD_MT25;
     assign W_status_busy                     = (FLASH_MODEL == FLASH_MODEL_S25FL256S) ? I_rd_cmd_data[0] : (~I_rd_cmd_data[7]);
     assign W_erase_status_error              = (FLASH_MODEL == FLASH_MODEL_S25FL256S) ? I_rd_cmd_data[5] : (I_rd_cmd_data[5] | I_rd_cmd_data[1]);
     assign W_write_status_error              = (FLASH_MODEL == FLASH_MODEL_S25FL256S) ? I_rd_cmd_data[6] : (I_rd_cmd_data[4] | I_rd_cmd_data[1]);
+    assign W_need_qe_prepare                 = (FLASH_MODEL == FLASH_MODEL_S25FL256S) && (SPI_BUS_WIDTH == 4);
+    assign W_qe_enabled                      = I_rd_cmd_data[1];
+    assign W_sr1_status_error                = R_sr1_shadow[6] | R_sr1_shadow[5];
+    assign W_sr1_unlock_required             = R_sr1_shadow[7] | (|R_sr1_shadow[4:2]);
 
     assign W_era_addr_next_4k                = R_era_addr + 'h1000;
     assign W_era_addr_next_64k               = R_era_addr + 'h10000;
@@ -346,11 +383,11 @@ module flash_ctrl #(
     assign W_axis_fire               = I_axis_tvalid & R_axis_tready;
     assign W_wr_count_overflow       = (R_wr_cnt > W_wr_total_beats);
 
-    // 错误事件提取：用于输�?last_fail_stage/timeout_err
+    // ?????????????????????????last_fail_stage/timeout_err
     assign W_err_evt_erase_addr_invalid = (cur_state == IDLE) && W_opt_begin_pos && (I_bin_size != 32'd0) && W_erase_start_invalid;
     assign W_err_evt_erase_timeout_64k  = (cur_state == RD_ERA_64K_STATUS_CHECK) && W_status_busy && (R_erase_timeout_cnt >= ERASE_TIMEOUT_64K_CYCLES);
     assign W_err_evt_erase_timeout_4k   = (cur_state == RD_ERA_4K_STATUS_CHECK)  && W_status_busy && (R_erase_timeout_cnt >= ERASE_TIMEOUT_4K_CYCLES);
-    assign W_err_evt_erase_status       = ((cur_state == RD_ERA_64K_STATUS_CHECK) || (cur_state == RD_ERA_4K_STATUS_CHECK)) && (!W_status_busy) && W_erase_status_error;
+    assign W_err_evt_erase_status       = ((cur_state == RD_ERA_64K_STATUS_CHECK) || (cur_state == RD_ERA_4K_STATUS_CHECK)) && W_erase_status_error;
     assign W_err_evt_erase_busy_not_seen= ((cur_state == RD_ERA_64K_STATUS_CHECK) || (cur_state == RD_ERA_4K_STATUS_CHECK)) &&
                                           (!W_status_busy) && (!W_erase_status_error) && (!R_erase_busy_seen);
     assign W_err_evt_erase_next_invalid = ((cur_state == RD_ERA_64K_STATUS_CHECK) && (!W_status_busy) && (!W_erase_status_error) && (!W_erase_done_after_64k) && W_erase_invalid_after_64k) ||
@@ -359,10 +396,11 @@ module flash_ctrl #(
     assign W_err_evt_write_overflow     = (cur_state == RD_WRITE_STATUE_CHECK) && W_wr_count_overflow;
     assign W_err_evt_write_status       = (cur_state == RD_WRITE_STATUE_CHECK) && (!W_wr_count_overflow) && (!W_status_busy) && W_write_status_error;
     assign W_err_evt_write_verify       = (cur_state == WRITE_CHECK_CMPR) && (I_rd_data != R_wr_data);
+    assign W_err_evt_qe_enable          = (cur_state == QE_READ_CR1_VERIFY_CHECK) && (!W_qe_enabled);
 
     assign W_err_evt_any     = W_err_evt_erase_addr_invalid | W_err_evt_erase_timeout_64k | W_err_evt_erase_timeout_4k |
                                W_err_evt_erase_status | W_err_evt_erase_busy_not_seen | W_err_evt_erase_next_invalid | W_err_evt_erase_verify |
-                               W_err_evt_write_status | W_err_evt_write_verify | W_err_evt_write_overflow;
+                               W_err_evt_write_status | W_err_evt_write_verify | W_err_evt_write_overflow | W_err_evt_qe_enable;
     assign W_err_evt_timeout = W_err_evt_erase_timeout_64k | W_err_evt_erase_timeout_4k;
 
     assign W_err_stage_code = W_err_evt_erase_timeout_64k  ? FAIL_STAGE_ERASE_TIMEOUT_64K  :
@@ -375,6 +413,7 @@ module flash_ctrl #(
                               W_err_evt_write_overflow     ? FAIL_STAGE_WRITE_OVERFLOW      :
                               W_err_evt_write_status       ? FAIL_STAGE_WRITE_STATUS_ERROR  :
                               W_err_evt_write_verify       ? FAIL_STAGE_WRITE_VERIFY_ERROR   :
+                              W_err_evt_qe_enable          ? FAIL_STAGE_QE_ENABLE_FAILED    :
                                                              FAIL_STAGE_NONE;
 
 
@@ -400,6 +439,8 @@ module flash_ctrl #(
                 if (W_opt_begin_pos) begin
                     if (I_bin_size == 32'd0)
                         nxt_state = FINISH;
+                    else if (W_need_qe_prepare)
+                        nxt_state = QE_READ_SR1;
                     else if (W_erase_start_invalid)
                         nxt_state = ERA_CHECK_ERROR;
                     else if (W_need_clear_status)
@@ -412,9 +453,69 @@ module flash_ctrl #(
                 else
                     nxt_state = IDLE;
             end
+            QE_READ_SR1:begin
+                if (I_flash_opt_done)
+                    nxt_state = QE_READ_SR1_CHECK;
+                else
+                    nxt_state = QE_READ_SR1;
+            end
+            QE_READ_SR1_CHECK:begin
+                if (W_sr1_status_error)
+                    nxt_state = CLEAR_STATUS;
+                else
+                    nxt_state = QE_READ_CR1;
+            end
+            QE_READ_CR1:begin
+                if (I_flash_opt_done)
+                    nxt_state = QE_READ_CR1_CHECK;
+                else
+                    nxt_state = QE_READ_CR1;
+            end
+            QE_READ_CR1_CHECK:begin
+                if (W_qe_enabled && !W_sr1_unlock_required) begin
+                    if (W_erase_start_invalid)
+                        nxt_state = ERA_CHECK_ERROR;
+                    else if (W_need_clear_status)
+                        nxt_state = CLEAR_STATUS;
+                    else if (W_erase_start_use_4k)
+                        nxt_state = ERASE_4K;
+                    else
+                        nxt_state = ERASE_64K;
+                end
+                else
+                    nxt_state = QE_WRITE_REG;
+            end
+            QE_WRITE_REG:begin
+                if (I_flash_opt_done)
+                    nxt_state = QE_READ_CR1_VERIFY;
+                else
+                    nxt_state = QE_WRITE_REG;
+            end
+            QE_READ_CR1_VERIFY:begin
+                if (I_flash_opt_done)
+                    nxt_state = QE_READ_CR1_VERIFY_CHECK;
+                else
+                    nxt_state = QE_READ_CR1_VERIFY;
+            end
+            QE_READ_CR1_VERIFY_CHECK:begin
+                if (W_qe_enabled && !W_sr1_unlock_required) begin
+                    if (W_erase_start_invalid)
+                        nxt_state = ERA_CHECK_ERROR;
+                    else if (W_need_clear_status)
+                        nxt_state = CLEAR_STATUS;
+                    else if (W_erase_start_use_4k)
+                        nxt_state = ERASE_4K;
+                    else
+                        nxt_state = ERASE_64K;
+                end
+                else
+                    nxt_state = ERA_CHECK_ERROR;
+            end
             CLEAR_STATUS:begin
                 if (I_flash_opt_done) begin
-                    if (W_erase_start_use_4k)
+                    if (W_need_qe_prepare)
+                        nxt_state = QE_READ_SR1;
+                    else if (W_erase_start_use_4k)
                         nxt_state = ERASE_4K;
                     else
                         nxt_state = ERASE_64K;
@@ -444,15 +545,15 @@ module flash_ctrl #(
                     nxt_state = RD_ERA_64K_STATUS;
             end
             RD_ERA_64K_STATUS_CHECK:begin
-                if (W_status_busy) begin
-                    // 不再使用“重复擦同一地址多次”的方式，改为状态轮�?超时保护�?
+                if (W_erase_status_error) begin
+                    nxt_state = ERA_CHECK_ERROR;
+                end
+                else if (W_status_busy) begin
+                    // Stop retrying the same sector forever. Switch to explicit status polling with timeout protection.
                         if (R_erase_timeout_cnt >= ERASE_TIMEOUT_64K_CYCLES)
                         nxt_state = ERA_CHECK_ERROR;
                     else
                         nxt_state = RD_ERA_64K_STATUS;
-                end
-                else if (W_erase_status_error) begin
-                    nxt_state = ERA_CHECK_ERROR;
                 end
                 else if (!R_erase_busy_seen) begin
                     nxt_state = ERA_CHECK_ERROR;
@@ -494,14 +595,14 @@ module flash_ctrl #(
                     nxt_state = RD_ERA_4K_STATUS;
             end
             RD_ERA_4K_STATUS_CHECK:begin
-                if (W_status_busy) begin
+                if (W_erase_status_error) begin
+                    nxt_state = ERA_CHECK_ERROR;
+                end
+                else if (W_status_busy) begin
                     if (R_erase_timeout_cnt >= ERASE_TIMEOUT_4K_CYCLES)
                         nxt_state = ERA_CHECK_ERROR;
                     else
                         nxt_state = RD_ERA_4K_STATUS;
-                end
-                else if (W_erase_status_error) begin
-                    nxt_state = ERA_CHECK_ERROR;
                 end
                 else if (!R_erase_busy_seen) begin
                     nxt_state = ERA_CHECK_ERROR;
@@ -550,7 +651,7 @@ module flash_ctrl #(
                     nxt_state = RD_WRITE_STATUS;
             end
             RD_WRITE_STATUE_CHECK:begin
-                // 保护项：写完成计数不允许超过总写拍数，防止“多写字节”�?
+                // Protection check: the completed write-beat count must never exceed the planned total beat count.
                     if (W_wr_count_overflow)
                     nxt_state = WRITE_CHECK_ERR;
                 else if (W_status_busy)
@@ -615,6 +716,43 @@ module flash_ctrl #(
                 IDLE:begin
                     R_opt_en   <= 1'b0;
                     R_opt_mode <= 4'd0;
+                end
+                QE_READ_SR1:begin
+                    R_opt_mode <= 4'd8;
+                    if (I_flash_opt_done)
+                        R_opt_en <= 1'b0;
+                    else
+                        R_opt_en <= 1'b1;
+                end
+                QE_READ_SR1_CHECK:begin
+                    R_opt_en <= R_opt_en;
+                end
+                QE_READ_CR1:begin
+                    R_opt_mode <= 4'd8;
+                    if (I_flash_opt_done)
+                        R_opt_en <= 1'b0;
+                    else
+                        R_opt_en <= 1'b1;
+                end
+                QE_READ_CR1_CHECK:begin
+                    R_opt_en <= R_opt_en;
+                end
+                QE_WRITE_REG:begin
+                    R_opt_mode <= 4'd7;
+                    if (I_flash_opt_done)
+                        R_opt_en <= 1'b0;
+                    else
+                        R_opt_en <= 1'b1;
+                end
+                QE_READ_CR1_VERIFY:begin
+                    R_opt_mode <= 4'd8;
+                    if (I_flash_opt_done)
+                        R_opt_en <= 1'b0;
+                    else
+                        R_opt_en <= 1'b1;
+                end
+                QE_READ_CR1_VERIFY_CHECK:begin
+                    R_opt_en <= R_opt_en;
                 end
                 CLEAR_STATUS:begin
                     if (I_flash_opt_done)
@@ -681,7 +819,7 @@ module flash_ctrl #(
                         R_opt_en <= 1'b0;
                     end
                     else begin
-                        // 写请求必须由 AXIS 握手触发，保证“一次握�?一次写入”�?
+                        // Only launch one write operation per AXIS handshake to keep a strict one-beat-per-write mapping.
                             if (W_axis_fire && (R_wr_cnt < W_wr_total_beats)) begin
                             R_opt_en   <= 1'b1;
                             R_opt_mode <= 4'd1;
@@ -741,7 +879,11 @@ module flash_ctrl #(
             R_era_addr         <= 'd0;
             R_rd_addr          <= 'd0;
             R_wr_addr          <= 'd0;
+            R_wr_cmd           <= WRITE_REG_CMD_S25;
+            R_wr_cmd_data      <= 16'h0002;
             R_rd_cmd           <= STATUS_CMD_S25;
+            R_sr1_shadow       <= 8'h00;
+            R_cr1_shadow       <= 8'h00;
         end
         else begin
             case (cur_state)
@@ -756,7 +898,11 @@ module flash_ctrl #(
                         R_era_addr         <= I_update_addr;
                         R_rd_addr          <= I_update_addr;
                         R_wr_addr          <= I_update_addr;
+                        R_wr_cmd           <= WRITE_REG_CMD_S25;
+                        R_wr_cmd_data      <= 16'h0002;
                         R_rd_cmd           <= W_status_cmd;
+                        R_sr1_shadow       <= 8'h00;
+                        R_cr1_shadow       <= 8'h00;
                     end
                     else begin
                         R_era_64k_cnt      <= 'd0;
@@ -768,8 +914,36 @@ module flash_ctrl #(
                         R_era_addr         <= 'd0;
                         R_rd_addr          <= 'd0;
                         R_wr_addr          <= 'd0;
+                        R_wr_cmd           <= WRITE_REG_CMD_S25;
+                        R_wr_cmd_data      <= 16'h0002;
                         R_rd_cmd           <= W_status_cmd;
+                        R_sr1_shadow       <= 8'h00;
+                        R_cr1_shadow       <= 8'h00;
                     end
+                end
+                QE_READ_SR1:begin
+                    R_rd_cmd <= STATUS_CMD_S25;
+                end
+                QE_READ_SR1_CHECK:begin
+                    R_sr1_shadow <= I_rd_cmd_data;
+                end
+                QE_READ_CR1:begin
+                    R_rd_cmd <= CONFIG_CMD_S25;
+                end
+                QE_READ_CR1_CHECK:begin
+                    R_cr1_shadow  <= I_rd_cmd_data;
+                    R_wr_cmd      <= WRITE_REG_CMD_S25;
+                    R_wr_cmd_data <= {8'h00, (I_rd_cmd_data | S25_QE_MASK)};
+                end
+                QE_WRITE_REG:begin
+                    R_wr_cmd      <= WRITE_REG_CMD_S25;
+                    R_wr_cmd_data <= {8'h00, (R_cr1_shadow | S25_QE_MASK)};
+                end
+                QE_READ_CR1_VERIFY:begin
+                    R_rd_cmd <= CONFIG_CMD_S25;
+                end
+                QE_READ_CR1_VERIFY_CHECK:begin
+                    R_cr1_shadow <= I_rd_cmd_data;
                 end
                 CLEAR_STATUS:begin
                     R_rd_cmd <= W_status_cmd;
@@ -895,7 +1069,7 @@ module flash_ctrl #(
                     R_wr_data <= 'd0;
                 end
                 WRITE:begin
-                    // 仅在握手成功时锁存数据，避免“无握手取数”导致丢/重字节�?
+                    // ??????????????????????????????????????????????????????/??????????
                         if (W_axis_fire) begin
                         R_wr_data <= I_axis_tdata;
                     end
@@ -1053,7 +1227,8 @@ module flash_ctrl #(
         end
         else begin
             case (cur_state)
-                // 在状态轮询循环中保持计数，避免每次回�?RD_ERA_*_STATUS 时被清零�?
+                // Hold the timeout counter across the erase-status polling loop instead of clearing it on every
+                // return to RD_ERA_*_STATUS.
                 RD_ERA_64K_STATUS:begin
                     R_erase_timeout_cnt <= R_erase_timeout_cnt;
                 end

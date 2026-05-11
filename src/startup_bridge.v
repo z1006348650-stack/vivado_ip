@@ -2,7 +2,7 @@
 
 //-------------------------------------------------------
 //
-//  author: 二乐
+//  author: 浜屼箰
 //
 //------------------------------------------------------
 
@@ -12,7 +12,9 @@ module startup_bridge #(
 )(
     input  I_usr_cclk,   
     input  I_spi_cs_n,   
-    input  I_spi_mosi,   
+    input  [3:0] I_spi_dq_o,
+    input  [3:0] I_spi_dq_oe,
+    output [3:0] O_spi_dq_i,
     output O_spi_miso,   
     output O_eos         
     );
@@ -28,15 +30,16 @@ module startup_bridge #(
 
     assign O_eos = W_eos;
 
-    // x1 DO[0]->MOSI, DI[1]->MISO, FCSBO->CS_N
-    assign W_do     = {3'b000, I_spi_mosi};
-    assign W_dts    = (USE_STARTUP_FLASH_IO != 0) ? 4'b1110 : 4'b1111;
+    // STARTUPE3 DO/DTS map QSPI DQ[3:0]; DTS=0 drives, DTS=1 tri-states.
+    assign W_do     = I_spi_dq_o;
+    assign W_dts    = (USE_STARTUP_FLASH_IO != 0) ? ~I_spi_dq_oe : 4'b1111;
     assign W_fcsbo  = (USE_STARTUP_FLASH_IO != 0) ? I_spi_cs_n : 1'b1;
     assign W_fcsbts = (USE_STARTUP_FLASH_IO != 0) ? 1'b0 : 1'b1;
 
     generate
         if (FPGA_FAMILY == FPGA_FAMILY_7SERIES) begin : GEN_STARTUPE2
             
+            assign O_spi_dq_i = 4'b0000;
             assign O_spi_miso = 1'b0;
             STARTUPE2 #(
                  .PROG_USR("FALSE"),
@@ -60,6 +63,7 @@ module startup_bridge #(
         end
         else begin : GEN_STARTUPE3
             
+            assign O_spi_dq_i = (USE_STARTUP_FLASH_IO != 0) ? W_di : 4'b0000;
             assign O_spi_miso = (USE_STARTUP_FLASH_IO != 0) ? W_di[1] : 1'b0;
             STARTUPE3 #(
                  .PROG_USR("FALSE")

@@ -22,6 +22,11 @@
 		input                                   I_err               ,
 		input                                   I_timeout_err       ,
 		input [4:0]                             I_last_fail_stage   ,
+		input [7:0]                             I_dbg_rd_cmd_data   ,
+		input [7:0]                             I_dbg_sr1_shadow    ,
+		input [7:0]                             I_dbg_cr1_shadow    ,
+		input [15:0]                            I_dbg_wr_cmd_data   ,
+		input [4:0]                             I_dbg_cur_state     ,
 		input                                   I_icap_done         ,
 
 		output                                  O_aux_rst_n         ,
@@ -432,9 +437,9 @@
 	        3'h2   : reg_data_out <= slv_reg2;
 	        3'h3   : reg_data_out <= slv_reg3;
 	        3'h4   : reg_data_out <= slv_reg4;
-	        3'h5   : reg_data_out <= slv_reg5;
-	        3'h6   : reg_data_out <= slv_reg6;
-	        3'h7   : reg_data_out <= slv_reg7;
+	        3'h5   : reg_data_out <= {I_dbg_rd_cmd_data, I_dbg_sr1_shadow, I_dbg_cr1_shadow};
+	        3'h6   : reg_data_out <= {16'h0000, I_dbg_wr_cmd_data};
+	        3'h7   : reg_data_out <= {10'h000, I_timeout_err, I_err, I_drv_opt_ok, I_drv_opt_busy, I_dbg_cur_state, I_last_fail_stage, I_dbg_rd_cmd_data[1], I_dbg_rd_cmd_data[0], 6'h00};
 	        default : reg_data_out <= 0;
 	      endcase
 	end

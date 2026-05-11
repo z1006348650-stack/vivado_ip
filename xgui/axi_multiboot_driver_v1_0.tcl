@@ -13,8 +13,10 @@ proc init_gui { IPINST } {
   ipgui::add_param $IPINST -name "FLASH_MODEL" -parent ${Page_0}
   ipgui::add_param $IPINST -name "FPGA_FAMILY" -parent ${Page_0}
   ipgui::add_param $IPINST -name "MULTIBOOT_ADDR_SHIFT" -parent ${Page_0}
+  ipgui::add_param $IPINST -name "POST_ERASE_STATUS_GUARD_CYCLES" -parent ${Page_0}
   ipgui::add_param $IPINST -name "RD_DATA_MAX_LEN" -parent ${Page_0}
   ipgui::add_param $IPINST -name "S25_TBPARM_TOP" -parent ${Page_0}
+  ipgui::add_param $IPINST -name "SPI_BUS_WIDTH" -parent ${Page_0}
   ipgui::add_param $IPINST -name "SYS_CLK_FREQ" -parent ${Page_0}
   ipgui::add_param $IPINST -name "UPDATE_BASE_ADDR" -parent ${Page_0}
   ipgui::add_param $IPINST -name "USE_STARTUP_FLASH_IO" -parent ${Page_0}
@@ -113,6 +115,15 @@ proc validate_PARAM_VALUE.MULTIBOOT_ADDR_SHIFT { PARAM_VALUE.MULTIBOOT_ADDR_SHIF
 	return true
 }
 
+proc update_PARAM_VALUE.POST_ERASE_STATUS_GUARD_CYCLES { PARAM_VALUE.POST_ERASE_STATUS_GUARD_CYCLES } {
+	# Procedure called to update POST_ERASE_STATUS_GUARD_CYCLES when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.POST_ERASE_STATUS_GUARD_CYCLES { PARAM_VALUE.POST_ERASE_STATUS_GUARD_CYCLES } {
+	# Procedure called to validate POST_ERASE_STATUS_GUARD_CYCLES
+	return true
+}
+
 proc update_PARAM_VALUE.RD_DATA_MAX_LEN { PARAM_VALUE.RD_DATA_MAX_LEN } {
 	# Procedure called to update RD_DATA_MAX_LEN when any of the dependent parameters in the arguments change
 }
@@ -128,6 +139,15 @@ proc update_PARAM_VALUE.S25_TBPARM_TOP { PARAM_VALUE.S25_TBPARM_TOP } {
 
 proc validate_PARAM_VALUE.S25_TBPARM_TOP { PARAM_VALUE.S25_TBPARM_TOP } {
 	# Procedure called to validate S25_TBPARM_TOP
+	return true
+}
+
+proc update_PARAM_VALUE.SPI_BUS_WIDTH { PARAM_VALUE.SPI_BUS_WIDTH } {
+	# Procedure called to update SPI_BUS_WIDTH when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.SPI_BUS_WIDTH { PARAM_VALUE.SPI_BUS_WIDTH } {
+	# Procedure called to validate SPI_BUS_WIDTH
 	return true
 }
 
@@ -233,6 +253,11 @@ proc update_MODELPARAM_VALUE.FLASH_MODEL { MODELPARAM_VALUE.FLASH_MODEL PARAM_VA
 	set_property value [get_property value ${PARAM_VALUE.FLASH_MODEL}] ${MODELPARAM_VALUE.FLASH_MODEL}
 }
 
+proc update_MODELPARAM_VALUE.SPI_BUS_WIDTH { MODELPARAM_VALUE.SPI_BUS_WIDTH PARAM_VALUE.SPI_BUS_WIDTH } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.SPI_BUS_WIDTH}] ${MODELPARAM_VALUE.SPI_BUS_WIDTH}
+}
+
 proc update_MODELPARAM_VALUE.S25_TBPARM_TOP { MODELPARAM_VALUE.S25_TBPARM_TOP PARAM_VALUE.S25_TBPARM_TOP } {
 	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
 	set_property value [get_property value ${PARAM_VALUE.S25_TBPARM_TOP}] ${MODELPARAM_VALUE.S25_TBPARM_TOP}
@@ -246,5 +271,10 @@ proc update_MODELPARAM_VALUE.ERASE_TIMEOUT_4K_CYCLES { MODELPARAM_VALUE.ERASE_TI
 proc update_MODELPARAM_VALUE.ERASE_TIMEOUT_64K_CYCLES { MODELPARAM_VALUE.ERASE_TIMEOUT_64K_CYCLES PARAM_VALUE.ERASE_TIMEOUT_64K_CYCLES } {
 	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
 	set_property value [get_property value ${PARAM_VALUE.ERASE_TIMEOUT_64K_CYCLES}] ${MODELPARAM_VALUE.ERASE_TIMEOUT_64K_CYCLES}
+}
+
+proc update_MODELPARAM_VALUE.POST_ERASE_STATUS_GUARD_CYCLES { MODELPARAM_VALUE.POST_ERASE_STATUS_GUARD_CYCLES PARAM_VALUE.POST_ERASE_STATUS_GUARD_CYCLES } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.POST_ERASE_STATUS_GUARD_CYCLES}] ${MODELPARAM_VALUE.POST_ERASE_STATUS_GUARD_CYCLES}
 }
 

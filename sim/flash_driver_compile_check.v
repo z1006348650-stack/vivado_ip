@@ -3,7 +3,7 @@
 
 //---------------------------------------------------------------------------
 //
-//    author: erle
+//    author:婵炲瓨绮屾總鏃傜�??
 //
 //-------------------------------------------------------------------------
 
@@ -17,22 +17,22 @@ module flash_driver #(
     parameter integer FLASH_MODEL = 0        ,
     parameter integer SPI_BUS_WIDTH = 1
     )(
-        input                                        I_clk_in         ,                // system clock
-        input                                        I_rst_n          ,                // active-low reset
+        input                                        I_clk_in         ,                // 闂佸搫鍟悥濂稿�??
+        input                                        I_rst_n          ,                // 婵犮垼娉涚粔宕囩�??
              
-        input       [3:0]                            I_mode           ,                // operation mode select
-        input                                        I_opt_en         ,                // operation start pulse
+        input       [3:0]                            I_mode           ,                // 濠碘槅鍨埀顒€纾涵鈧梻渚囧亜椤︽壆�??      
+        input                                        I_opt_en         ,                // 闂佺懓鐏濈粔宕囩礊閺冣偓閹峰懘鎳楅姘�?        
          
-        input       [FLASH_ADDR_WIDTH-1:0]           I_wr_base_addr   ,                // write base address
-        input       [FLASH_ADDR_WIDTH-1:0]           I_rd_base_addr   ,                // read base address
-        input       [FLASH_ADDR_WIDTH-1:0]           I_era_base_addr  ,                // erase base address
+        input       [FLASH_ADDR_WIDTH-1:0]           I_wr_base_addr   ,                // 闂佸憡鍔栭悷銉╁矗閸℃稑鏋侀柣妤€鐗嗙粊锕傛偣瑜嶉崲鏌ワ綖閹版澘鎹堕柡澶嬪�??         
+        input       [FLASH_ADDR_WIDTH-1:0]           I_rd_base_addr   ,                // 闁荤姴娲╅褔宕甸銏犳瀬闁绘鐗嗙粊锕傛偣瑜嶉崲鏌ワ綖閹版澘鎹堕柡澶嬪缁?
+        input       [FLASH_ADDR_WIDTH-1:0]           I_era_base_addr  ,                // 闂佺懓灏呯粻鎾斥枍鎼淬劌鏋侀柣妤€鐗嗙粊锕傛偣瑜嶉崲鏌ワ綖閹版澘鎹堕柡澶嬪�??
  
-        input       [((WR_DATA_MAX_LEN << 3) - 1):0] I_wr_data        ,                // write payload
+        input       [((WR_DATA_MAX_LEN << 3) - 1):0] I_wr_data        ,                // 闂佸憡鍔栭悷銉╁矗閸℃稑鏋侀柣妤€鐗嗙粊?
 
-        input       [7:0]                            I_wr_cmd         ,                // register write command
-        input       [15:0]                           I_wr_cmd_data    ,                // register write payload
+        input       [7:0]                            I_wr_cmd         ,                // 闂佸憡鍔栭悷锔锯偓鍨缁傛帡濡堕崨顖涱潠闁诲孩绋掗敋婵?
+        input       [15:0]                           I_wr_cmd_data    ,                // 闂佸憡鍔栭悷锔锯偓鍨缁傛帡濡堕崨顖涱潠闁诲孩绋掗敋婵炲懏甯�?�顐︽偋閸繄�??
       
-        output      [((RD_DATA_MAX_LEN << 3)-1):0]   O_rd_data        ,                // read payload
+        output      [((RD_DATA_MAX_LEN << 3)-1):0]   O_rd_data        ,                // 闁荤姴娲╅褔宕甸銏犳瀬闁绘鐗嗙�??
       
         input                                        I_data           ,                // legacy x1 MISO input
         input       [3:0]                            I_dq             ,                // QSPI DQ input
@@ -66,11 +66,11 @@ module flash_driver #(
     localparam  READ_DUMMY_CYCLES = USE_X4 ? 8 : 0;
     localparam  READ_ADDR_TOTAL_CYCLES = CMD_ADDR_WIDTH + READ_DUMMY_CYCLES;
     localparam  ENABLE_CMD        = 8'h06;
-    localparam  CLEAR_STATUS_CMD  = (FLASH_MODEL == FLASH_MODEL_S25FL256S) ? 8'h30 : 8'h50;
-    localparam  ERASE_4K_CMD      = (FLASH_MODEL == FLASH_MODEL_N25Q128A) ? 8'h20 : 8'h21; // 4KB erase
-    localparam  ERASE_64K_CMD     = (FLASH_MODEL == FLASH_MODEL_N25Q128A) ? 8'hD8 : 8'hDC; // 64KB erase
+    localparam  CLEAR_STATUS_CMD  = 8'h50;
+    localparam  ERASE_4K_CMD      = (FLASH_MODEL == FLASH_MODEL_N25Q128A) ? 8'h20 : 8'h21; // 4K bytes闂佺懓灏呯粻鎾斥�??
+    localparam  ERASE_64K_CMD     = (FLASH_MODEL == FLASH_MODEL_N25Q128A) ? 8'hD8 : 8'hDC; // 64K bytes闂佺懓灏呯粻鎾斥�??
     localparam  ERASE_ALL_CMD     = 8'hC7;
-    localparam  READ_MAX_BIT_NUM  = RD_DATA_MAX_LEN << 3;         // read buffer depth in bits
+    localparam  READ_MAX_BIT_NUM  = RD_DATA_MAX_LEN << 3;         // �??
     localparam  WRITE_MAX_BIT_NUM = WR_DATA_MAX_LEN << 3;
 
     reg [31:0]  R_clk_cnt  ;
@@ -117,46 +117,6 @@ module flash_driver #(
     wire        W_read_addr_dummy_phase;
     wire [4:0]  W_wr_cmd_data_bits;
 
-    assign  W_spi_mosi = R_rd_data_out | R_wr_data_out | R_era_data_out | R_wr_cmd_data_out | R_rd_cmd_data_out;
-    assign  W_spi_miso = USE_X4 ? I_dq[1] : I_data;
-    assign  W_quad_write_data_phase = USE_X4 && ((cur_state == WRITE_SINGLE_DATA) || (cur_state == WRITE_MULTI_DATA));
-    assign  W_read_addr_dummy_phase = USE_X4 && (cur_state == WRITE_RD_ADDR) && (R_rd_bit_cnt >= CMD_ADDR_WIDTH);
-    assign  W_wr_cmd_data_bits = ((FLASH_MODEL == FLASH_MODEL_S25FL256S) && (I_wr_cmd == 8'h01)) ? 5'd16 : 5'd8;
-    assign  W_qspi_data_out = W_quad_write_data_phase ? R_wr_quad_data_out : {3'b000, W_spi_mosi};
-
-    assign  O_cs   = R_cs;
-    assign  O_sck  = R_clk;
-    assign  O_data = W_qspi_data_out[0];
-    assign  O_dq   = W_qspi_data_out;
-    assign  O_dq_oe = (R_cs || W_read_addr_dummy_phase ||
-                      (USE_X4 && ((cur_state == READ_SINGLE_DATA) || (cur_state == READ_MULTI_DATA)))) ? 4'b0000 :
-                      (W_quad_write_data_phase ? 4'b1111 : 4'b0001);
-    assign  O_rd_cmd_data = R_rd_cmd_data;
-    assign  O_opt_done = R_opt_done;
-    assign  O_opt_busy = R_opt_busy;
-
-    assign  W_opt_en = R_opt_en[0] & ~R_opt_en[1];
-    assign  SCK_L    = (R_clk_cnt == (R_CLK_DIVERD - 1)) ? 1'b1 : 1'b0;
-    assign  SCK_H    = (R_clk_cnt == (R_CLK_DIVERD >> 1)) ? 1'b1 : 1'b0;
-    assign  SCK_HALF_L = (R_clk_cnt == (R_CLK_DIVERD >> 2)) ? 1'b1 : 1'b0;
-    assign  SCK_HALF_H = (R_clk_cnt == ((R_CLK_DIVERD >> 1) + (R_CLK_DIVERD >> 2))) ? 1'b1 : 1'b0;
-
-  
-    generate
-       for (genvar i = 0; i <= RD_DATA_MAX_LEN - 1; i = i + 1) begin
-            for (genvar j = 0; j <= 7; j = j + 1) begin
-                 assign O_rd_data[((RD_DATA_MAX_LEN - 1 - i)<<3)+j] = R_rd_data[i][j];
-            end
-       end
-    endgenerate
-
-    always @(posedge I_clk_in or negedge I_rst_n) begin
-        if (!I_rst_n)
-            R_opt_en <= 2'b00;
-        else
-            R_opt_en <= {R_opt_en[0], I_opt_en};
-    end
-
 
     localparam IDLE                     = 26'b00_0000_0000_0000_0000_0000_0000;
 
@@ -200,6 +160,49 @@ module flash_driver #(
 
 
     reg [25:0] cur_state, nxt_state;
+
+    
+
+
+    assign  W_spi_mosi = R_rd_data_out | R_wr_data_out | R_era_data_out | R_wr_cmd_data_out | R_rd_cmd_data_out;
+    assign  W_spi_miso = USE_X4 ? I_dq[1] : I_data;
+    assign  W_quad_write_data_phase = USE_X4 && ((cur_state == WRITE_SINGLE_DATA) || (cur_state == WRITE_MULTI_DATA));
+    assign  W_read_addr_dummy_phase = USE_X4 && (cur_state == WRITE_RD_ADDR) && (R_rd_bit_cnt >= CMD_ADDR_WIDTH);
+    assign  W_wr_cmd_data_bits = ((FLASH_MODEL == FLASH_MODEL_S25FL256S) && (I_wr_cmd == 8'h01)) ? 5'd16 : 5'd8;
+    assign  W_qspi_data_out = W_quad_write_data_phase ? R_wr_quad_data_out : {3'b000, W_spi_mosi};
+
+    assign  O_cs   = R_cs;
+    assign  O_sck  = R_clk;
+    assign  O_data = W_qspi_data_out[0];
+    assign  O_dq   = W_qspi_data_out;
+    assign  O_dq_oe = (R_cs || W_read_addr_dummy_phase ||
+                      (USE_X4 && ((cur_state == READ_SINGLE_DATA) || (cur_state == READ_MULTI_DATA)))) ? 4'b0000 :
+                      (W_quad_write_data_phase ? 4'b1111 : 4'b0001);
+    assign  O_rd_cmd_data = R_rd_cmd_data;
+    assign  O_opt_done = R_opt_done;
+    assign  O_opt_busy = R_opt_busy;
+
+    assign  W_opt_en = R_opt_en[0] & ~R_opt_en[1];
+    assign  SCK_L    = (R_clk_cnt == (R_CLK_DIVERD - 1)) ? 1'b1 : 1'b0;
+    assign  SCK_H    = (R_clk_cnt == (R_CLK_DIVERD >> 1)) ? 1'b1 : 1'b0;
+    assign  SCK_HALF_L = (R_clk_cnt == (R_CLK_DIVERD >> 2)) ? 1'b1 : 1'b0;
+    assign  SCK_HALF_H = (R_clk_cnt == ((R_CLK_DIVERD >> 1) + (R_CLK_DIVERD >> 2))) ? 1'b1 : 1'b0;
+
+  
+    generate
+       for (genvar i = 0; i <= RD_DATA_MAX_LEN - 1; i = i + 1) begin
+            for (genvar j = 0; j <= 7; j = j + 1) begin
+                 assign O_rd_data[((RD_DATA_MAX_LEN - 1 - i)<<3)+j] = R_rd_data[i][j];
+            end
+       end
+    endgenerate
+
+    always @(posedge I_clk_in or negedge I_rst_n) begin
+        if (!I_rst_n)
+            R_opt_en <= 2'b00;
+        else
+            R_opt_en <= {R_opt_en[0], I_opt_en};
+    end
 
     always @(posedge I_clk_in or negedge I_rst_n) begin
         if (!I_rst_n)
@@ -410,7 +413,7 @@ module flash_driver #(
 
 
     
-    //        ?????????????????????
+    //        闁荤姴娲╁畷闈浢规径鎰�??
 
     always @(posedge I_clk_in or negedge I_rst_n) begin
         if (!I_rst_n) begin
@@ -503,7 +506,7 @@ module flash_driver #(
     end
 
 
-    // Write-data shift and timing control.
+    //          闂佸憡鍔栭悷褍霉婢舵劕绀?
 
     always @(posedge I_clk_in or negedge I_rst_n) begin
         if (!I_rst_n) begin
@@ -631,7 +634,7 @@ module flash_driver #(
     end
 
 
-    // Erase command shift and timing control.
+    // 闂佺懓灏呯粻鎾斥�??
     always @(posedge I_clk_in or negedge I_rst_n) begin
         if (!I_rst_n) begin
             R_era_bit_cnt <= 'd0;
@@ -741,7 +744,7 @@ module flash_driver #(
     end
 
 
-    // Register-write command shift and timing control.
+    // 闂佸憡鍔栭悷锔锯偓鍨缁傛帡濡堕崨顖涱潠闁诲孩绋掗敋婵?
 
     always @(posedge I_clk_in or negedge I_rst_n) begin
         if (!I_rst_n) begin
@@ -840,7 +843,7 @@ module flash_driver #(
         end
     end
 
-    // ???????????????????????????????????????????
+    // 闁荤姴娲ㄧ划顖溾偓鍨缁傛帡濡堕崨顖涱潠闁诲孩绋掗敋婵?
 
     always @(posedge I_clk_in or negedge I_rst_n) begin
         if (!I_rst_n) begin
@@ -897,7 +900,6 @@ module flash_driver #(
         end
     end
 
-
     always @(posedge I_clk_in or negedge I_rst_n) begin
         if (!I_rst_n)
             R_cs <= 1'b1;
@@ -946,7 +948,6 @@ module flash_driver #(
         end
     end
 
-
     always @(posedge I_clk_in or negedge I_rst_n) begin
         if (!I_rst_n)
             R_clk_cnt <= 'd0;
@@ -987,5 +988,6 @@ module flash_driver #(
 
 
 endmodule
+
 
 

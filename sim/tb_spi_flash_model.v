@@ -2,6 +2,7 @@
 
 module tb_spi_flash_model #(
     parameter integer FLASH_MODEL            = 0,
+    parameter integer SPI_BUS_WIDTH          = 1,
     parameter integer MEM_BYTES              = 262144,
     parameter integer P_BUSY_POLLS_PP        = 2,
     parameter integer P_BUSY_POLLS_ERASE_4K  = 4,
@@ -15,7 +16,9 @@ module tb_spi_flash_model #(
     input  wire       I_cs_n,
     input  wire       I_sck,
     input  wire       I_mosi,
+    input  wire [3:0] I_dq,
     output reg        O_miso,
+    output reg [3:0]  O_dq,
     output reg [7:0]  O_last_cmd,
     output reg [31:0] O_last_addr,
     output reg [2:0]  O_last_addr_bytes,
@@ -33,8 +36,11 @@ module tb_spi_flash_model #(
     localparam integer CMD_ADDR_BYTES = CMD_ADDR_BITS / 8;
 
     localparam [7:0] CMD_WREN      = 8'h06;
-    localparam [7:0] CMD_PP        = (FLASH_MODEL == FLASH_MODEL_N25Q128A) ? 8'h02 : 8'h12;
-    localparam [7:0] CMD_READ      = (FLASH_MODEL == FLASH_MODEL_N25Q128A) ? 8'h03 : 8'h13;
+    localparam integer USE_X4      = (SPI_BUS_WIDTH == 4);
+    localparam [7:0] CMD_PP        = USE_X4 ? ((FLASH_MODEL == FLASH_MODEL_N25Q128A) ? 8'h32 : 8'h34) :
+                                              ((FLASH_MODEL == FLASH_MODEL_N25Q128A) ? 8'h02 : 8'h12);
+    localparam [7:0] CMD_READ      = USE_X4 ? ((FLASH_MODEL == FLASH_MODEL_N25Q128A) ? 8'h6B : 8'h6C) :
+                                              ((FLASH_MODEL == FLASH_MODEL_N25Q128A) ? 8'h03 : 8'h13);
     localparam [7:0] CMD_ERASE_4K  = (FLASH_MODEL == FLASH_MODEL_N25Q128A) ? 8'h20 : 8'h21;
     localparam [7:0] CMD_ERASE_64K = (FLASH_MODEL == FLASH_MODEL_N25Q128A) ? 8'hD8 : 8'hDC;
     localparam [7:0] CMD_ERASE_ALL = 8'hC7;
@@ -48,6 +54,7 @@ module tb_spi_flash_model #(
     localparam [2:0] MODE_READ_DATA = 3'd3;
     localparam [2:0] MODE_STATUS    = 3'd4;
     localparam [2:0] MODE_IGNORE    = 3'd5;
+    localparam [2:0] MODE_READ_DUMMY = 3'd6;
 
     reg [7:0] R_mem [0:MEM_BYTES-1];
 
@@ -65,6 +72,8 @@ module tb_spi_flash_model #(
 
     reg [7:0]  R_pp_shift;
     reg [2:0]  R_pp_bit_cnt;
+    reg [3:0]  R_dummy_cnt;
+    reg        R_quad_half;
 
     reg [7:0]  R_out_shift;
     reg [3:0]  R_out_bits_left;
@@ -75,6 +84,10 @@ module tb_spi_flash_model #(
     reg        R_write_error_latched;
     reg [7:0]  R_temp_byte;
     time       R_status_guard_end_time;
+
+    wire W_mosi;
+
+    assign W_mosi = USE_X4 ? I_dq[0] : I_mosi;
 
     integer i;
     integer j;
@@ -155,6 +168,7 @@ module tb_spi_flash_model #(
             R_mem[i] = 8'hFF;
 
         O_miso               = 1'b0;
+        O_dq                 = 4'h0;
         O_last_cmd           = 8'h00;
         O_last_addr          = 32'd0;
         O_last_addr_bytes    = 3'd0;
@@ -175,6 +189,8 @@ module tb_spi_flash_model #(
         R_prog_addr          = 32'd0;
         R_pp_shift           = 8'h00;
         R_pp_bit_cnt         = 3'd0;
+        R_dummy_cnt          = 4'd0;
+        R_quad_half          = 1'b0;
         R_out_shift          = 8'h00;
         R_out_bits_left      = 4'd0;
         R_wel                = 1'b0;
@@ -188,6 +204,7 @@ module tb_spi_flash_model #(
     always @(negedge I_cs_n or negedge I_rst_n) begin
         if (!I_rst_n) begin
             O_miso          <= 1'b0;
+            O_dq            <= 4'h0;
             R_mode          <= MODE_GET_CMD;
             R_cmd_shift     <= 8'h00;
             R_cmd_bit_cnt   <= 4'd0;
@@ -200,11 +217,14 @@ module tb_spi_flash_model #(
             R_prog_addr     <= 32'd0;
             R_pp_shift      <= 8'h00;
             R_pp_bit_cnt    <= 3'd0;
+            R_dummy_cnt     <= 4'd0;
+            R_quad_half     <= 1'b0;
             R_out_shift     <= 8'h00;
             R_out_bits_left <= 4'd0;
         end
         else begin
             O_miso          <= 1'b0;
+            O_dq            <= 4'h0;
             R_mode          <= MODE_GET_CMD;
             R_cmd_shift     <= 8'h00;
             R_cmd_bit_cnt   <= 4'd0;
@@ -217,6 +237,8 @@ module tb_spi_flash_model #(
             R_prog_addr     <= 32'd0;
             R_pp_shift      <= 8'h00;
             R_pp_bit_cnt    <= 3'd0;
+            R_dummy_cnt     <= 4'd0;
+            R_quad_half     <= 1'b0;
             R_out_shift     <= 8'h00;
             R_out_bits_left <= 4'd0;
         end
@@ -340,26 +362,28 @@ module tb_spi_flash_model #(
             R_prog_addr    <= 32'd0;
             R_pp_shift     <= 8'h00;
             R_pp_bit_cnt   <= 3'd0;
+            R_dummy_cnt    <= 4'd0;
+            R_quad_half    <= 1'b0;
         end
         else if (!I_cs_n) begin
             case (R_mode)
                 MODE_GET_CMD: begin
-                    R_cmd_shift   <= {R_cmd_shift[6:0], I_mosi};
+                    R_cmd_shift   <= {R_cmd_shift[6:0], W_mosi};
                     R_cmd_bit_cnt <= R_cmd_bit_cnt + 1'b1;
                     if (R_cmd_bit_cnt == 4'd7) begin
-                        R_cmd_latched <= {R_cmd_shift[6:0], I_mosi};
+                        R_cmd_latched <= {R_cmd_shift[6:0], W_mosi};
                         R_cmd_valid   <= 1'b1;
                         R_cmd_bit_cnt <= 4'd0;
-                        if (({R_cmd_shift[6:0], I_mosi} == CMD_PP) ||
-                            ({R_cmd_shift[6:0], I_mosi} == CMD_READ) ||
-                            ({R_cmd_shift[6:0], I_mosi} == CMD_ERASE_4K) ||
-                            ({R_cmd_shift[6:0], I_mosi} == CMD_ERASE_64K)) begin
+                        if (({R_cmd_shift[6:0], W_mosi} == CMD_PP) ||
+                            ({R_cmd_shift[6:0], W_mosi} == CMD_READ) ||
+                            ({R_cmd_shift[6:0], W_mosi} == CMD_ERASE_4K) ||
+                            ({R_cmd_shift[6:0], W_mosi} == CMD_ERASE_64K)) begin
                             R_mode         <= MODE_GET_ADDR;
                             R_addr_shift   <= 32'd0;
                             R_addr_bit_cnt <= 6'd0;
                         end
-                        else if (({R_cmd_shift[6:0], I_mosi} == CMD_RDSR) ||
-                                 ({R_cmd_shift[6:0], I_mosi} == CMD_RDFSR)) begin
+                        else if (({R_cmd_shift[6:0], W_mosi} == CMD_RDSR) ||
+                                 ({R_cmd_shift[6:0], W_mosi} == CMD_RDFSR)) begin
                             R_mode <= MODE_STATUS;
                         end
                         else begin
@@ -369,19 +393,21 @@ module tb_spi_flash_model #(
                 end
 
                 MODE_GET_ADDR: begin
-                    R_addr_shift   <= {R_addr_shift[30:0], I_mosi};
+                    R_addr_shift   <= {R_addr_shift[30:0], W_mosi};
                     R_addr_bit_cnt <= R_addr_bit_cnt + 1'b1;
                     if (R_addr_bit_cnt == (CMD_ADDR_BITS - 1)) begin
-                        R_addr_latched <= {R_addr_shift[30:0], I_mosi};
+                        R_addr_latched <= {R_addr_shift[30:0], W_mosi};
                         if (R_cmd_latched == CMD_READ) begin
-                            R_mode      <= MODE_READ_DATA;
-                            R_read_addr <= {R_addr_shift[30:0], I_mosi};
+                            R_mode      <= USE_X4 ? MODE_READ_DUMMY : MODE_READ_DATA;
+                            R_read_addr <= {R_addr_shift[30:0], W_mosi};
+                            R_dummy_cnt <= 4'd0;
                         end
                         else if (R_cmd_latched == CMD_PP) begin
                             R_mode      <= MODE_PP_DATA;
-                            R_prog_addr <= {R_addr_shift[30:0], I_mosi};
+                            R_prog_addr <= {R_addr_shift[30:0], W_mosi};
                             R_pp_shift  <= 8'h00;
                             R_pp_bit_cnt<= 3'd0;
+                            R_quad_half <= 1'b0;
                         end
                         else begin
                             R_mode <= MODE_IGNORE;
@@ -390,14 +416,38 @@ module tb_spi_flash_model #(
                 end
 
                 MODE_PP_DATA: begin
-                    R_pp_shift   <= {R_pp_shift[6:0], I_mosi};
-                    R_pp_bit_cnt <= R_pp_bit_cnt + 1'b1;
-                    if (R_pp_bit_cnt == 3'd7) begin
-                        if (R_wel && (R_prog_addr < MEM_BYTES))
-                            R_mem[R_prog_addr] <= R_mem[R_prog_addr] & {R_pp_shift[6:0], I_mosi};
-                        R_prog_addr <= R_prog_addr + 1'b1;
-                        R_pp_shift  <= 8'h00;
-                        R_pp_bit_cnt<= 3'd0;
+                    if (USE_X4) begin
+                        if (!R_quad_half) begin
+                            R_pp_shift[7:4] <= I_dq;
+                            R_quad_half     <= 1'b1;
+                        end
+                        else begin
+                            if (R_wel && (R_prog_addr < MEM_BYTES))
+                                R_mem[R_prog_addr] <= R_mem[R_prog_addr] & {R_pp_shift[7:4], I_dq};
+                            R_prog_addr <= R_prog_addr + 1'b1;
+                            R_quad_half <= 1'b0;
+                        end
+                    end
+                    else begin
+                        R_pp_shift   <= {R_pp_shift[6:0], W_mosi};
+                        R_pp_bit_cnt <= R_pp_bit_cnt + 1'b1;
+                        if (R_pp_bit_cnt == 3'd7) begin
+                            if (R_wel && (R_prog_addr < MEM_BYTES))
+                                R_mem[R_prog_addr] <= R_mem[R_prog_addr] & {R_pp_shift[6:0], W_mosi};
+                            R_prog_addr <= R_prog_addr + 1'b1;
+                            R_pp_shift  <= 8'h00;
+                            R_pp_bit_cnt<= 3'd0;
+                        end
+                    end
+                end
+
+                MODE_READ_DUMMY: begin
+                    if (R_dummy_cnt == 4'd7) begin
+                        R_mode <= MODE_READ_DATA;
+                        R_dummy_cnt <= 4'd0;
+                    end
+                    else begin
+                        R_dummy_cnt <= R_dummy_cnt + 1'b1;
                     end
                 end
 
@@ -410,12 +460,29 @@ module tb_spi_flash_model #(
     always @(negedge I_sck or negedge I_rst_n) begin
         if (!I_rst_n) begin
             O_miso          <= 1'b0;
+            O_dq            <= 4'h0;
             R_out_shift     <= 8'h00;
             R_out_bits_left <= 4'd0;
             R_temp_byte     <= 8'h00;
         end
         else if (!I_cs_n) begin
-            if ((R_mode == MODE_STATUS) || (R_mode == MODE_READ_DATA)) begin
+            if (USE_X4 && (R_mode == MODE_READ_DATA)) begin
+                if (R_out_bits_left == 0) begin
+                    R_temp_byte = F_mem_rd8(R_read_addr);
+                    R_read_addr <= R_read_addr + 1'b1;
+                    O_dq            <= R_temp_byte[7:4];
+                    O_miso          <= R_temp_byte[6];
+                    R_out_shift     <= {R_temp_byte[3:0], 4'h0};
+                    R_out_bits_left <= 4'd4;
+                end
+                else begin
+                    O_dq            <= R_out_shift[7:4];
+                    O_miso          <= R_out_shift[6];
+                    R_out_shift     <= 8'h00;
+                    R_out_bits_left <= 4'd0;
+                end
+            end
+            else if ((R_mode == MODE_STATUS) || (R_mode == MODE_READ_DATA)) begin
                 if (R_out_bits_left == 0) begin
                     if (R_mode == MODE_STATUS) begin
                         R_temp_byte = F_status_byte((P_POST_ERASE_STATUS_GUARD_NS != 0) && ($time < R_status_guard_end_time));
@@ -436,10 +503,12 @@ module tb_spi_flash_model #(
             end
             else begin
                 O_miso <= 1'b0;
+                O_dq   <= 4'h0;
             end
         end
         else begin
             O_miso <= 1'b0;
+            O_dq   <= 4'h0;
         end
     end
 

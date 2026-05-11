@@ -1,7 +1,8 @@
 `timescale 1ns / 1ps
 
 module tb_flash_driver_core #(
-    parameter integer FLASH_MODEL = 0
+    parameter integer FLASH_MODEL = 0,
+    parameter integer SPI_BUS_WIDTH = 1
 );
 
     localparam integer FLASH_MODEL_S25FL256S = 0;
@@ -20,8 +21,11 @@ module tb_flash_driver_core #(
     localparam integer WR_DATA_W        = WR_DATA_MAX_LEN * 8;
     localparam integer MAX_WAIT_CYCLES  = 200000;
 
-    localparam [7:0] EXPECT_PP_CMD        = (FLASH_MODEL == FLASH_MODEL_N25Q128A) ? 8'h02 : 8'h12;
-    localparam [7:0] EXPECT_READ_CMD      = (FLASH_MODEL == FLASH_MODEL_N25Q128A) ? 8'h03 : 8'h13;
+    localparam integer USE_X4             = (SPI_BUS_WIDTH == 4);
+    localparam [7:0] EXPECT_PP_CMD        = USE_X4 ? ((FLASH_MODEL == FLASH_MODEL_N25Q128A) ? 8'h32 : 8'h34) :
+                                                     ((FLASH_MODEL == FLASH_MODEL_N25Q128A) ? 8'h02 : 8'h12);
+    localparam [7:0] EXPECT_READ_CMD      = USE_X4 ? ((FLASH_MODEL == FLASH_MODEL_N25Q128A) ? 8'h6B : 8'h6C) :
+                                                     ((FLASH_MODEL == FLASH_MODEL_N25Q128A) ? 8'h03 : 8'h13);
     localparam [7:0] EXPECT_ERASE_4K_CMD  = (FLASH_MODEL == FLASH_MODEL_N25Q128A) ? 8'h20 : 8'h21;
     localparam [7:0] EXPECT_ERASE_64K_CMD = (FLASH_MODEL == FLASH_MODEL_N25Q128A) ? 8'hD8 : 8'hDC;
     localparam [2:0] EXPECT_ADDR_BYTES    = (FLASH_MODEL == FLASH_MODEL_N25Q128A) ? 3'd3 : 3'd4;
@@ -42,11 +46,14 @@ module tb_flash_driver_core #(
     wire                          O_cs;
     wire                          O_sck;
     wire                          O_data;
+    wire [3:0]                    O_dq;
+    wire [3:0]                    O_dq_oe;
     wire [7:0]                    O_rd_cmd_data;
     wire                          O_opt_done;
     wire                          O_opt_busy;
 
     wire                          W_spi_miso;
+    wire [3:0]                    W_spi_flash_dq;
     wire [7:0]                    W_last_cmd;
     wire [31:0]                   W_last_addr;
     wire [2:0]                    W_last_addr_bytes;
@@ -281,7 +288,8 @@ module tb_flash_driver_core #(
         .RD_DATA_MAX_LEN  (RD_DATA_MAX_LEN),
         .WR_DATA_MAX_LEN  (WR_DATA_MAX_LEN),
         .FLASH_ADDR_WIDTH (FLASH_ADDR_WIDTH),
-        .FLASH_MODEL      (FLASH_MODEL)
+        .FLASH_MODEL      (FLASH_MODEL),
+        .SPI_BUS_WIDTH    (SPI_BUS_WIDTH)
     ) dut (
         .I_clk_in         (I_clk_in),
         .I_rst_n          (I_rst_n),
@@ -295,17 +303,21 @@ module tb_flash_driver_core #(
         .I_wr_cmd_data    (I_wr_cmd_data),
         .O_rd_data        (O_rd_data),
         .I_data           (W_spi_miso),
+        .I_dq             (W_spi_flash_dq),
         .I_rd_cmd         (I_rd_cmd),
         .O_rd_cmd_data    (O_rd_cmd_data),
         .O_cs             (O_cs),
         .O_sck            (O_sck),
         .O_data           (O_data),
+        .O_dq             (O_dq),
+        .O_dq_oe          (O_dq_oe),
         .O_opt_done       (O_opt_done),
         .O_opt_busy       (O_opt_busy)
     );
 
     tb_spi_flash_model #(
         .FLASH_MODEL            (FLASH_MODEL),
+        .SPI_BUS_WIDTH          (SPI_BUS_WIDTH),
         .MEM_BYTES              (262144),
         .P_BUSY_POLLS_PP        (1),
         .P_BUSY_POLLS_ERASE_4K  (1),
@@ -315,7 +327,9 @@ module tb_flash_driver_core #(
         .I_cs_n                 (O_cs),
         .I_sck                  (O_sck),
         .I_mosi                 (O_data),
+        .I_dq                   (O_dq),
         .O_miso                 (W_spi_miso),
+        .O_dq                   (W_spi_flash_dq),
         .O_last_cmd             (W_last_cmd),
         .O_last_addr            (W_last_addr),
         .O_last_addr_bytes      (W_last_addr_bytes),
@@ -342,5 +356,26 @@ endmodule
 module tb_flash_driver_n25q128a;
     tb_flash_driver_core #(
         .FLASH_MODEL (2)
+    ) u_core ();
+endmodule
+
+module tb_flash_driver_s25_x4;
+    tb_flash_driver_core #(
+        .FLASH_MODEL   (0),
+        .SPI_BUS_WIDTH (4)
+    ) u_core ();
+endmodule
+
+module tb_flash_driver_mt25_x4;
+    tb_flash_driver_core #(
+        .FLASH_MODEL   (1),
+        .SPI_BUS_WIDTH (4)
+    ) u_core ();
+endmodule
+
+module tb_flash_driver_n25q128a_x4;
+    tb_flash_driver_core #(
+        .FLASH_MODEL   (2),
+        .SPI_BUS_WIDTH (4)
     ) u_core ();
 endmodule

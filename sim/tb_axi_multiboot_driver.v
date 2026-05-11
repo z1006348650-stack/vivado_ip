@@ -33,6 +33,7 @@ module tb_axi_multiboot_driver_core #(
     wire                        s_axis_tready;
     reg  [WR_DATA_W-1:0]        s_axis_tdata;
     wire                        I_data;
+    tri  [3:0]                  IO_dq;
     reg                         I_icap_en;
     wire                        O_cs;
     wire                        O_data;
@@ -298,7 +299,9 @@ module tb_axi_multiboot_driver_core #(
         .I_cs_n                  (O_cs),
         .I_sck                   (dut.W_sck),
         .I_mosi                  (O_data),
+        .I_dq                    (IO_dq),
         .O_miso                  (I_data),
+        .O_dq                    (IO_dq),
         .O_last_cmd              (W_last_cmd),
         .O_last_addr             (W_last_addr),
         .O_last_addr_bytes       (W_last_addr_bytes),
@@ -322,6 +325,7 @@ module tb_axi_multiboot_driver_core #(
         .MULTIBOOT_ADDR_SHIFT      (MULTIBOOT_ADDR_SHIFT),
         .FLASH_MODEL               (FLASH_MODEL),
         .S25_TBPARM_TOP            (0),
+        .SPI_BUS_WIDTH             (1),
         .ERASE_TIMEOUT_4K_CYCLES   (200000),
         .ERASE_TIMEOUT_64K_CYCLES  (300000),
         .POST_ERASE_STATUS_GUARD_CYCLES(DUT_POST_ERASE_STATUS_GUARD_CYCLES)
@@ -330,6 +334,7 @@ module tb_axi_multiboot_driver_core #(
         .s_axis_tready             (s_axis_tready),
         .s_axis_tdata              (s_axis_tdata),
         .I_data                    (I_data),
+        .IO_dq                     (IO_dq),
         .I_icap_en                 (I_icap_en),
         .O_cs                      (O_cs),
         .O_data                    (O_data),

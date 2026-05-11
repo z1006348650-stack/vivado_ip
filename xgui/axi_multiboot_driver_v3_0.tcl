@@ -13,8 +13,10 @@ proc init_gui { IPINST } {
   ipgui::add_param $IPINST -name "FLASH_MODEL" -parent ${Page_0}
   ipgui::add_param $IPINST -name "FPGA_FAMILY" -parent ${Page_0}
   ipgui::add_param $IPINST -name "MULTIBOOT_ADDR_SHIFT" -parent ${Page_0}
+  ipgui::add_param $IPINST -name "POST_ERASE_STATUS_GUARD_CYCLES" -parent ${Page_0}
   ipgui::add_param $IPINST -name "RD_DATA_MAX_LEN" -parent ${Page_0}
   ipgui::add_param $IPINST -name "S25_TBPARM_TOP" -parent ${Page_0}
+  ipgui::add_param $IPINST -name "SPI_BUS_WIDTH" -parent ${Page_0}
   ipgui::add_param $IPINST -name "SYS_CLK_FREQ" -parent ${Page_0}
   ipgui::add_param $IPINST -name "UPDATE_BASE_ADDR" -parent ${Page_0}
   ipgui::add_param $IPINST -name "USE_STARTUP_FLASH_IO" -parent ${Page_0}
@@ -140,6 +142,15 @@ proc validate_PARAM_VALUE.S25_TBPARM_TOP { PARAM_VALUE.S25_TBPARM_TOP } {
 	return true
 }
 
+proc update_PARAM_VALUE.SPI_BUS_WIDTH { PARAM_VALUE.SPI_BUS_WIDTH } {
+	# Procedure called to update SPI_BUS_WIDTH when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.SPI_BUS_WIDTH { PARAM_VALUE.SPI_BUS_WIDTH } {
+	# Procedure called to validate SPI_BUS_WIDTH
+	return true
+}
+
 proc update_PARAM_VALUE.SYS_CLK_FREQ { PARAM_VALUE.SYS_CLK_FREQ } {
 	# Procedure called to update SYS_CLK_FREQ when any of the dependent parameters in the arguments change
 }
@@ -240,6 +251,11 @@ proc update_MODELPARAM_VALUE.USE_STARTUP_FLASH_IO { MODELPARAM_VALUE.USE_STARTUP
 proc update_MODELPARAM_VALUE.FLASH_MODEL { MODELPARAM_VALUE.FLASH_MODEL PARAM_VALUE.FLASH_MODEL } {
 	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
 	set_property value [get_property value ${PARAM_VALUE.FLASH_MODEL}] ${MODELPARAM_VALUE.FLASH_MODEL}
+}
+
+proc update_MODELPARAM_VALUE.SPI_BUS_WIDTH { MODELPARAM_VALUE.SPI_BUS_WIDTH PARAM_VALUE.SPI_BUS_WIDTH } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.SPI_BUS_WIDTH}] ${MODELPARAM_VALUE.SPI_BUS_WIDTH}
 }
 
 proc update_MODELPARAM_VALUE.S25_TBPARM_TOP { MODELPARAM_VALUE.S25_TBPARM_TOP PARAM_VALUE.S25_TBPARM_TOP } {

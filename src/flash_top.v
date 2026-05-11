@@ -2,7 +2,7 @@
 
 //-------------------------------------------------------
 //
-//  author:¶þÀÖ
+//  author:æµœå±¼ç®°
 //
 //------------------------------------------------------
 
@@ -13,6 +13,7 @@ module flash_top #(
     parameter WR_DATA_MAX_LEN  = 4          ,
     parameter FLASH_ADDR_WIDTH = 32         ,
     parameter FLASH_MODEL      = 0          ,
+    parameter SPI_BUS_WIDTH    = 1          ,
     parameter S25_TBPARM_TOP   = 0          ,
     parameter ERASE_TIMEOUT_4K_CYCLES       = 200000000  ,
     parameter ERASE_TIMEOUT_64K_CYCLES      = 300000000  ,
@@ -39,11 +40,19 @@ module flash_top #(
     output                                       O_err          ,  
     output                                       O_timeout_err  ,
     output [4:0]                                 O_last_fail_stage ,
+    output [7:0]                                 O_dbg_rd_cmd_data ,
+    output [7:0]                                 O_dbg_sr1_shadow  ,
+    output [7:0]                                 O_dbg_cr1_shadow  ,
+    output [15:0]                                O_dbg_wr_cmd_data ,
+    output [4:0]                                 O_dbg_cur_state   ,
 
     input                                        I_data         ,
+    input  [3:0]                                 I_dq           ,
     output                                       O_cs           ,
     output                                       O_sck          ,
-    output                                       O_data         
+    output                                       O_data         ,
+    output [3:0]                                 O_dq           ,
+    output [3:0]                                 O_dq_oe        
 
     );
 
@@ -67,6 +76,8 @@ module flash_top #(
     wire       [FLASH_ADDR_WIDTH-1:0]           W_rd_base_addr  ;
     wire       [FLASH_ADDR_WIDTH-1:0]           W_era_base_addr ;  
 
+    wire       [7:0]                            W_wr_cmd         ;
+    wire       [15:0]                           W_wr_cmd_data    ;
     wire       [7:0]                            W_rd_cmd         ;
     wire       [7:0]                            W_rd_cmd_data    ;  
 
@@ -78,6 +89,7 @@ module flash_top #(
         .WR_DATA_MAX_LEN    (WR_DATA_MAX_LEN)      ,
         .FLASH_ADDR_WIDTH   (FLASH_ADDR_WIDTH)     ,
         .FLASH_MODEL        (FLASH_MODEL)          ,
+        .SPI_BUS_WIDTH      (SPI_BUS_WIDTH)        ,
         .S25_TBPARM_TOP     (S25_TBPARM_TOP)       ,
         .ERASE_TIMEOUT_4K_CYCLES       (ERASE_TIMEOUT_4K_CYCLES)       ,
         .ERASE_TIMEOUT_64K_CYCLES      (ERASE_TIMEOUT_64K_CYCLES)      ,
@@ -106,6 +118,8 @@ module flash_top #(
         .O_rd_addr        (W_rd_base_addr       ), 
         .O_era_addr       (W_era_base_addr      ), 
     
+        .O_wr_cmd         (W_wr_cmd             ),
+        .O_wr_cmd_data    (W_wr_cmd_data        ),
         .I_rd_cmd_data    (W_rd_cmd_data        ),
         .O_rd_cmd         (W_rd_cmd             ),
     
@@ -119,7 +133,12 @@ module flash_top #(
        .O_drv_opt_ok      (O_drv_opt_ok         ),
        .O_err             (O_err                ),
        .O_timeout_err     (O_timeout_err        ),
-       .O_last_fail_stage (O_last_fail_stage    )
+       .O_last_fail_stage (O_last_fail_stage    ),
+       .O_dbg_rd_cmd_data (O_dbg_rd_cmd_data    ),
+       .O_dbg_sr1_shadow  (O_dbg_sr1_shadow     ),
+       .O_dbg_cr1_shadow  (O_dbg_cr1_shadow     ),
+       .O_dbg_wr_cmd_data (O_dbg_wr_cmd_data    ),
+       .O_dbg_cur_state   (O_dbg_cur_state      )
 
     );
 
@@ -131,7 +150,8 @@ module flash_top #(
             .RD_DATA_MAX_LEN    (RD_DATA_MAX_LEN)       ,
             .WR_DATA_MAX_LEN    (WR_DATA_MAX_LEN)       ,
             .FLASH_ADDR_WIDTH   (FLASH_ADDR_WIDTH)      ,
-            .FLASH_MODEL        (FLASH_MODEL)
+            .FLASH_MODEL        (FLASH_MODEL)         ,
+            .SPI_BUS_WIDTH      (SPI_BUS_WIDTH)
     ) flash_driver_inst(
 
         .I_clk_in           (I_clk_in        ),
@@ -144,13 +164,14 @@ module flash_top #(
         .I_rd_base_addr     (W_rd_base_addr  ),                
         .I_era_base_addr    (W_era_base_addr ),               
 
-        .I_wr_cmd           (),
-        .I_wr_cmd_data      (), 
+        .I_wr_cmd           (W_wr_cmd        ),
+        .I_wr_cmd_data      (W_wr_cmd_data   ), 
 
 
         .I_wr_data          (W_wr_data      ),   
         .O_rd_data          (W_rd_data      ),
-        .I_data             (I_data         ), 
+        .I_data             (I_data         ),
+        .I_dq               (I_dq           ),
 
         .I_rd_cmd           (W_rd_cmd       ),
         .O_rd_cmd_data      (W_rd_cmd_data  ),
@@ -158,6 +179,8 @@ module flash_top #(
         .O_cs               (O_cs           ),
         .O_sck              (O_sck          ),
         .O_data             (O_data         ),
+        .O_dq               (O_dq           ),
+        .O_dq_oe            (O_dq_oe        ),
 
         .O_opt_done         (W_opt_done     ),
         .O_opt_busy         (W_opt_busy     )

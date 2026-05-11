@@ -42,7 +42,7 @@
       <spirit:busType spirit:vendor="xilinx.com" spirit:library="interface" spirit:name="aximm" spirit:version="1.0"/>
       <spirit:abstractionType spirit:vendor="xilinx.com" spirit:library="interface" spirit:name="aximm_rtl" spirit:version="1.0"/>
       <spirit:slave>
-        <spirit:memoryMapRef spirit:memoryMapRef="S00_AXI"/>
+        <spirit:memoryMapRef spirit:memoryMapRef="s00_axi"/>
       </spirit:slave>
       <spirit:portMaps>
         <spirit:portMap>
@@ -217,7 +217,7 @@
       <spirit:parameters>
         <spirit:parameter>
           <spirit:name>POLARITY</spirit:name>
-          <spirit:value spirit:id="BUSIFPARAM_VALUE.S00_AXI_RST.POLARITY" spirit:choiceRef="choice_list_9d8b0d81">ACTIVE_LOW</spirit:value>
+          <spirit:value spirit:id="BUSIFPARAM_VALUE.S00_AXI_RST.POLARITY" spirit:choiceRef="choice_list_74b5137e">ACTIVE_LOW</spirit:value>
         </spirit:parameter>
       </spirit:parameters>
     </spirit:busInterface>
@@ -259,16 +259,6 @@
         <spirit:usage>register</spirit:usage>
       </spirit:addressBlock>
     </spirit:memoryMap>
-    <spirit:memoryMap>
-      <spirit:name>S00_AXI</spirit:name>
-      <spirit:addressBlock>
-        <spirit:name>reg0</spirit:name>
-        <spirit:baseAddress spirit:format="bitString" spirit:resolve="user" spirit:bitStringLength="32">0</spirit:baseAddress>
-        <spirit:range spirit:format="long" spirit:resolve="dependent" spirit:dependency="pow(2,(spirit:decode(id(&apos;MODELPARAM_VALUE.C_S00_AXI_ADDR_WIDTH&apos;)) - 1) + 1)" spirit:minimum="4096" spirit:rangeType="long">4096</spirit:range>
-        <spirit:width spirit:format="long" spirit:resolve="dependent" spirit:dependency="(spirit:decode(id(&apos;MODELPARAM_VALUE.C_S00_AXI_DATA_WIDTH&apos;)) - 1) + 1">32</spirit:width>
-        <spirit:usage>register</spirit:usage>
-      </spirit:addressBlock>
-    </spirit:memoryMap>
   </spirit:memoryMaps>
   <spirit:model>
     <spirit:views>
@@ -287,7 +277,7 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>viewChecksum</spirit:name>
-            <spirit:value>ad3c6299</spirit:value>
+            <spirit:value>e61b10cb</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -306,7 +296,7 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>viewChecksum</spirit:name>
-            <spirit:value>ad3c6299</spirit:value>
+            <spirit:value>e61b10cb</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -320,21 +310,7 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>viewChecksum</spirit:name>
-            <spirit:value>e96b8127</spirit:value>
-          </spirit:parameter>
-        </spirit:parameters>
-      </spirit:view>
-      <spirit:view>
-        <spirit:name>xilinx_testbench</spirit:name>
-        <spirit:displayName>Test Bench</spirit:displayName>
-        <spirit:envIdentifier>:vivado.xilinx.com:simulation.testbench</spirit:envIdentifier>
-        <spirit:fileSetRef>
-          <spirit:localName>xilinx_testbench_view_fileset</spirit:localName>
-        </spirit:fileSetRef>
-        <spirit:parameters>
-          <spirit:parameter>
-            <spirit:name>viewChecksum</spirit:name>
-            <spirit:value>3875f544</spirit:value>
+            <spirit:value>5bdc7ee0</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -398,6 +374,37 @@
             </spirit:wireTypeDef>
           </spirit:wireTypeDefs>
         </spirit:wire>
+        <spirit:vendorExtensions>
+          <xilinx:portInfo>
+            <xilinx:enablement>
+              <xilinx:isEnabled xilinx:resolve="dependent" xilinx:id="PORT_ENABLEMENT.I_data" xilinx:dependency="(spirit:decode(id(&apos;PARAM_VALUE.SPI_BUS_WIDTH&apos;)) = 1)">true</xilinx:isEnabled>
+            </xilinx:enablement>
+          </xilinx:portInfo>
+        </spirit:vendorExtensions>
+      </spirit:port>
+      <spirit:port>
+        <spirit:name>IO_dq</spirit:name>
+        <spirit:wire>
+          <spirit:direction>inout</spirit:direction>
+          <spirit:vector>
+            <spirit:left spirit:format="long">3</spirit:left>
+            <spirit:right spirit:format="long">0</spirit:right>
+          </spirit:vector>
+          <spirit:wireTypeDefs>
+            <spirit:wireTypeDef>
+              <spirit:typeName>std_logic_vector</spirit:typeName>
+              <spirit:viewNameRef>xilinx_anylanguagesynthesis</spirit:viewNameRef>
+              <spirit:viewNameRef>xilinx_anylanguagebehavioralsimulation</spirit:viewNameRef>
+            </spirit:wireTypeDef>
+          </spirit:wireTypeDefs>
+        </spirit:wire>
+        <spirit:vendorExtensions>
+          <xilinx:portInfo>
+            <xilinx:enablement>
+              <xilinx:isEnabled xilinx:resolve="dependent" xilinx:id="PORT_ENABLEMENT.IO_dq" xilinx:dependency="(spirit:decode(id(&apos;PARAM_VALUE.SPI_BUS_WIDTH&apos;)) = 4)">false</xilinx:isEnabled>
+            </xilinx:enablement>
+          </xilinx:portInfo>
+        </spirit:vendorExtensions>
       </spirit:port>
       <spirit:port>
         <spirit:name>I_icap_en</spirit:name>
@@ -437,6 +444,13 @@
             </spirit:wireTypeDef>
           </spirit:wireTypeDefs>
         </spirit:wire>
+        <spirit:vendorExtensions>
+          <xilinx:portInfo>
+            <xilinx:enablement>
+              <xilinx:isEnabled xilinx:resolve="dependent" xilinx:id="PORT_ENABLEMENT.O_data" xilinx:dependency="(spirit:decode(id(&apos;PARAM_VALUE.SPI_BUS_WIDTH&apos;)) = 1)">true</xilinx:isEnabled>
+            </xilinx:enablement>
+          </xilinx:portInfo>
+        </spirit:vendorExtensions>
       </spirit:port>
       <spirit:port>
         <spirit:name>s00_axi_aclk</spirit:name>
@@ -848,6 +862,11 @@
         <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.FLASH_MODEL">0</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="integer">
+        <spirit:name>SPI_BUS_WIDTH</spirit:name>
+        <spirit:displayName>Spi Bus Width</spirit:displayName>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.SPI_BUS_WIDTH">1</spirit:value>
+      </spirit:modelParameter>
+      <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>S25_TBPARM_TOP</spirit:name>
         <spirit:displayName>S25 Tbparm Top</spirit:displayName>
         <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.S25_TBPARM_TOP">0</spirit:value>
@@ -871,7 +890,7 @@
   </spirit:model>
   <spirit:choices>
     <spirit:choice>
-      <spirit:name>choice_list_9d8b0d81</spirit:name>
+      <spirit:name>choice_list_74b5137e</spirit:name>
       <spirit:enumeration>ACTIVE_HIGH</spirit:enumeration>
       <spirit:enumeration>ACTIVE_LOW</spirit:enumeration>
     </spirit:choice>
@@ -910,43 +929,39 @@
       <spirit:file>
         <spirit:name>hdl/axi_multiboot_driver_v1_0_S00_AXI.v</spirit:name>
         <spirit:fileType>verilogSource</spirit:fileType>
-        <spirit:logicalName>xil_defaultbib</spirit:logicalName>
       </spirit:file>
       <spirit:file>
         <spirit:name>src/cmd_decoder.v</spirit:name>
         <spirit:fileType>verilogSource</spirit:fileType>
-        <spirit:logicalName>xil_defaultbib</spirit:logicalName>
       </spirit:file>
       <spirit:file>
         <spirit:name>src/flash_ctrl.v</spirit:name>
         <spirit:fileType>verilogSource</spirit:fileType>
-        <spirit:logicalName>xil_defaultbib</spirit:logicalName>
       </spirit:file>
       <spirit:file>
         <spirit:name>src/flash_driver.v</spirit:name>
         <spirit:fileType>verilogSource</spirit:fileType>
-        <spirit:logicalName>xil_defaultbib</spirit:logicalName>
       </spirit:file>
       <spirit:file>
         <spirit:name>src/flash_top.v</spirit:name>
         <spirit:fileType>verilogSource</spirit:fileType>
-        <spirit:logicalName>xil_defaultbib</spirit:logicalName>
       </spirit:file>
       <spirit:file>
         <spirit:name>src/icap_jump.v</spirit:name>
         <spirit:fileType>verilogSource</spirit:fileType>
-        <spirit:logicalName>xil_defaultbib</spirit:logicalName>
+      </spirit:file>
+      <spirit:file>
+        <spirit:name>src/qspi_dq_iobuf.v</spirit:name>
+        <spirit:fileType>verilogSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
         <spirit:name>src/startup_bridge.v</spirit:name>
         <spirit:fileType>verilogSource</spirit:fileType>
-        <spirit:logicalName>xil_defaultbib</spirit:logicalName>
       </spirit:file>
       <spirit:file>
         <spirit:name>hdl/axi_multiboot_driver_v1_0.v</spirit:name>
         <spirit:fileType>verilogSource</spirit:fileType>
-        <spirit:userFileType>CHECKSUM_35a9bb2a</spirit:userFileType>
-        <spirit:logicalName>xil_defaultbib</spirit:logicalName>
+        <spirit:userFileType>CHECKSUM_a0fd10ba</spirit:userFileType>
       </spirit:file>
     </spirit:fileSet>
     <spirit:fileSet>
@@ -992,42 +1007,38 @@
       <spirit:file>
         <spirit:name>hdl/axi_multiboot_driver_v1_0_S00_AXI.v</spirit:name>
         <spirit:fileType>verilogSource</spirit:fileType>
-        <spirit:logicalName>xil_defaultbib</spirit:logicalName>
       </spirit:file>
       <spirit:file>
         <spirit:name>src/cmd_decoder.v</spirit:name>
         <spirit:fileType>verilogSource</spirit:fileType>
-        <spirit:logicalName>xil_defaultbib</spirit:logicalName>
       </spirit:file>
       <spirit:file>
         <spirit:name>src/flash_ctrl.v</spirit:name>
         <spirit:fileType>verilogSource</spirit:fileType>
-        <spirit:logicalName>xil_defaultbib</spirit:logicalName>
       </spirit:file>
       <spirit:file>
         <spirit:name>src/flash_driver.v</spirit:name>
         <spirit:fileType>verilogSource</spirit:fileType>
-        <spirit:logicalName>xil_defaultbib</spirit:logicalName>
       </spirit:file>
       <spirit:file>
         <spirit:name>src/flash_top.v</spirit:name>
         <spirit:fileType>verilogSource</spirit:fileType>
-        <spirit:logicalName>xil_defaultbib</spirit:logicalName>
       </spirit:file>
       <spirit:file>
         <spirit:name>src/icap_jump.v</spirit:name>
         <spirit:fileType>verilogSource</spirit:fileType>
-        <spirit:logicalName>xil_defaultbib</spirit:logicalName>
+      </spirit:file>
+      <spirit:file>
+        <spirit:name>src/qspi_dq_iobuf.v</spirit:name>
+        <spirit:fileType>verilogSource</spirit:fileType>
       </spirit:file>
       <spirit:file>
         <spirit:name>src/startup_bridge.v</spirit:name>
         <spirit:fileType>verilogSource</spirit:fileType>
-        <spirit:logicalName>xil_defaultbib</spirit:logicalName>
       </spirit:file>
       <spirit:file>
         <spirit:name>hdl/axi_multiboot_driver_v1_0.v</spirit:name>
         <spirit:fileType>verilogSource</spirit:fileType>
-        <spirit:logicalName>xil_defaultbib</spirit:logicalName>
       </spirit:file>
     </spirit:fileSet>
     <spirit:fileSet>
@@ -1045,36 +1056,12 @@
       <spirit:file>
         <spirit:name>xgui/axi_multiboot_driver_v3_0.tcl</spirit:name>
         <spirit:fileType>tclSource</spirit:fileType>
-        <spirit:userFileType>CHECKSUM_e96b8127</spirit:userFileType>
+        <spirit:userFileType>CHECKSUM_5bdc7ee0</spirit:userFileType>
         <spirit:userFileType>XGUI_VERSION_2</spirit:userFileType>
       </spirit:file>
     </spirit:fileSet>
-    <spirit:fileSet>
-      <spirit:name>xilinx_testbench_view_fileset</spirit:name>
-      <spirit:file>
-        <spirit:name>sim/tb_spi_flash_model.v</spirit:name>
-        <spirit:fileType>verilogSource</spirit:fileType>
-        <spirit:userFileType>USED_IN_implementation</spirit:userFileType>
-        <spirit:userFileType>USED_IN_simulation</spirit:userFileType>
-        <spirit:userFileType>USED_IN_synthesis</spirit:userFileType>
-        <spirit:logicalName>xil_defaultbib</spirit:logicalName>
-      </spirit:file>
-      <spirit:file>
-        <spirit:name>sim/tb_axi_multiboot_driver.v</spirit:name>
-        <spirit:fileType>verilogSource</spirit:fileType>
-        <spirit:userFileType>USED_IN_implementation</spirit:userFileType>
-        <spirit:userFileType>USED_IN_simulation</spirit:userFileType>
-        <spirit:userFileType>USED_IN_synthesis</spirit:userFileType>
-        <spirit:logicalName>xil_defaultbib</spirit:logicalName>
-      </spirit:file>
-      <spirit:file>
-        <spirit:name>../prj_325t/project_1/project_1.tmp/axi_multiboot_driver_v3_0_project/tb_axi_multiboot_driver_s25_behav.wcfg</spirit:name>
-        <spirit:fileType>unknown</spirit:fileType>
-        <spirit:userFileType>USED_IN_simulation</spirit:userFileType>
-      </spirit:file>
-    </spirit:fileSet>
   </spirit:fileSets>
-  <spirit:description>AXI multiboot driver with FLASH_MODEL support for S25FL256S, MT25QL, and N25Q128A</spirit:description>
+  <spirit:description>AXI multiboot driver with SPI x1/x4 support for S25FL256S, MT25QL, and N25Q128A</spirit:description>
   <spirit:parameters>
     <spirit:parameter>
       <spirit:name>C_S00_AXI_DATA_WIDTH</spirit:name>
@@ -1143,6 +1130,12 @@
       <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.FLASH_MODEL">0</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
+      <spirit:name>SPI_BUS_WIDTH</spirit:name>
+      <spirit:displayName>SPI_BUS_WIDTH</spirit:displayName>
+      <spirit:description>SPI data bus width: 1=standard SPI, 4=quad data phase (commands/address/status stay x1).</spirit:description>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.SPI_BUS_WIDTH">1</spirit:value>
+    </spirit:parameter>
+    <spirit:parameter>
       <spirit:name>S25_TBPARM_TOP</spirit:name>
       <spirit:displayName>S25 Tbparm Top</spirit:displayName>
       <spirit:description>Only used when FLASH_MODEL=0 (S25FL256S).</spirit:description>
@@ -1159,13 +1152,13 @@
       <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.ERASE_TIMEOUT_64K_CYCLES">300000000</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
-      <spirit:name>Component_Name</spirit:name>
-      <spirit:value spirit:resolve="user" spirit:id="PARAM_VALUE.Component_Name" spirit:order="1">axi_multiboot_driver_v1_0_v1_0</spirit:value>
-    </spirit:parameter>
-    <spirit:parameter>
       <spirit:name>POST_ERASE_STATUS_GUARD_CYCLES</spirit:name>
       <spirit:displayName>Post Erase Status Guard Cycles</spirit:displayName>
       <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.POST_ERASE_STATUS_GUARD_CYCLES">10</spirit:value>
+    </spirit:parameter>
+    <spirit:parameter>
+      <spirit:name>Component_Name</spirit:name>
+      <spirit:value spirit:resolve="user" spirit:id="PARAM_VALUE.Component_Name" spirit:order="1">axi_multiboot_driver_v1_0_v1_0</spirit:value>
     </spirit:parameter>
   </spirit:parameters>
   <spirit:vendorExtensions>
@@ -1186,69 +1179,17 @@
         <xilinx:xpmLibrary>XPM_CDC</xilinx:xpmLibrary>
         <xilinx:xpmLibrary>XPM_FIFO</xilinx:xpmLibrary>
       </xilinx:xpmLibraries>
-      <xilinx:coreRevision>5</xilinx:coreRevision>
-      <xilinx:coreCreationDateTime>2026-04-05T06:55:48Z</xilinx:coreCreationDateTime>
-      <xilinx:tags>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@f7b28d_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@7ca00f76_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@59821330_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@68070b06_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@22987db7_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@3405fb03_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@526b55f4_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@20d652c3_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@771c7dd2_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@51bc7688_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@281aedea_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@60a5cdd1_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@6fc8c55b_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@75fae75_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@3fb8ca08_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@410cfab9_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@20dfc613_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@65f1ed7d_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@7cecc384_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@23a9a26_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@24b6f9ad_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@69954681_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@3cc47ebc_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@41c0399f_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@39525029_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@7ee8d6ec_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@1bef316d_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@27b46f85_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@7970cc69_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@7e81027e_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@342eb52d_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@5f7081b5_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@32edb75b_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@313b5a83_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@52b6d027_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@f87510_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@2a35d5ae_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@48083e4a_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@7bd0b84e_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@7037001d_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@605bede5_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@2512eaed_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@412bf4ea_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@1852ec5e_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@62c40b9d_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@270c94cf_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@30c3e2f_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@ffee1cb_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@6bb326cf_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@5d99bea0_ARCHIVE_LOCATION">g:/016-codex/0-xianyu/2-uart_fpga_update/axi_multiboot_driver_1.0</xilinx:tag>
-      </xilinx:tags>
+      <xilinx:coreRevision>1</xilinx:coreRevision>
+      <xilinx:coreCreationDateTime>2026-05-10T15:32:23Z</xilinx:coreCreationDateTime>
     </xilinx:coreExtensions>
     <xilinx:packagingInfo>
       <xilinx:xilinxVersion>2019.1</xilinx:xilinxVersion>
-      <xilinx:checksum xilinx:scope="busInterfaces" xilinx:value="6fbf63fc"/>
-      <xilinx:checksum xilinx:scope="memoryMaps" xilinx:value="954cccfa"/>
-      <xilinx:checksum xilinx:scope="fileGroups" xilinx:value="28295e48"/>
-      <xilinx:checksum xilinx:scope="ports" xilinx:value="f04b42f9"/>
-      <xilinx:checksum xilinx:scope="hdlParameters" xilinx:value="8b73ed8f"/>
-      <xilinx:checksum xilinx:scope="parameters" xilinx:value="fe85b4d6"/>
+      <xilinx:checksum xilinx:scope="busInterfaces" xilinx:value="3af82789"/>
+      <xilinx:checksum xilinx:scope="memoryMaps" xilinx:value="871c369d"/>
+      <xilinx:checksum xilinx:scope="fileGroups" xilinx:value="53b23865"/>
+      <xilinx:checksum xilinx:scope="ports" xilinx:value="505c4116"/>
+      <xilinx:checksum xilinx:scope="hdlParameters" xilinx:value="8138b278"/>
+      <xilinx:checksum xilinx:scope="parameters" xilinx:value="c0159bae"/>
     </xilinx:packagingInfo>
   </spirit:vendorExtensions>
 </spirit:component>

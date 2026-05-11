@@ -59,6 +59,54 @@ proc patch_supported_families {component_xml} {
     close $fp_out
 }
 
+proc patch_flash_driver_fileset_membership {component_xml} {
+    set fp_in [open $component_xml r]
+    set comp_text [read $fp_in]
+    close $fp_in
+
+    if {[string first "src/flash_driver.v" $comp_text] >= 0} {
+        return
+    }
+
+    set synth_old "      <spirit:file>\n        <spirit:name>src/flash_ctrl.v</spirit:name>\n        <spirit:fileType>verilogSource</spirit:fileType>\n      </spirit:file>\n      <spirit:file>\n        <spirit:name>src/flash_top.v</spirit:name>\n        <spirit:fileType>verilogSource</spirit:fileType>\n      </spirit:file>"
+    set synth_new "      <spirit:file>\n        <spirit:name>src/flash_ctrl.v</spirit:name>\n        <spirit:fileType>verilogSource</spirit:fileType>\n      </spirit:file>\n      <spirit:file>\n        <spirit:name>src/flash_driver.v</spirit:name>\n        <spirit:fileType>verilogSource</spirit:fileType>\n      </spirit:file>\n      <spirit:file>\n        <spirit:name>src/flash_top.v</spirit:name>\n        <spirit:fileType>verilogSource</spirit:fileType>\n      </spirit:file>"
+
+    set sim_old "      <spirit:file>\n        <spirit:name>src/flash_ctrl.v</spirit:name>\n        <spirit:fileType>verilogSource</spirit:fileType>\n      </spirit:file>\n      <spirit:file>\n        <spirit:name>src/flash_top.v</spirit:name>\n        <spirit:fileType>verilogSource</spirit:fileType>\n      </spirit:file>"
+    set sim_new "      <spirit:file>\n        <spirit:name>src/flash_ctrl.v</spirit:name>\n        <spirit:fileType>verilogSource</spirit:fileType>\n      </spirit:file>\n      <spirit:file>\n        <spirit:name>src/flash_driver.v</spirit:name>\n        <spirit:fileType>verilogSource</spirit:fileType>\n      </spirit:file>\n      <spirit:file>\n        <spirit:name>src/flash_top.v</spirit:name>\n        <spirit:fileType>verilogSource</spirit:fileType>\n      </spirit:file>"
+
+    set comp_text [string map [list \
+        $synth_old $synth_new \
+        $sim_old   $sim_new] $comp_text]
+
+    set fp_out [open $component_xml w]
+    puts -nonewline $fp_out $comp_text
+    close $fp_out
+}
+
+proc patch_spi_bus_port_visibility {component_xml} {
+    set fp_in [open $component_xml r]
+    set comp_text [read $fp_in]
+    close $fp_in
+
+    set port_i_data_old "      <spirit:port>\n        <spirit:name>I_data</spirit:name>\n        <spirit:wire>\n          <spirit:direction>in</spirit:direction>\n          <spirit:wireTypeDefs>\n            <spirit:wireTypeDef>\n              <spirit:typeName>std_logic</spirit:typeName>\n              <spirit:viewNameRef>xilinx_anylanguagesynthesis</spirit:viewNameRef>\n              <spirit:viewNameRef>xilinx_anylanguagebehavioralsimulation</spirit:viewNameRef>\n            </spirit:wireTypeDef>\n          </spirit:wireTypeDefs>\n        </spirit:wire>\n      </spirit:port>"
+    set port_i_data_new "      <spirit:port>\n        <spirit:name>I_data</spirit:name>\n        <spirit:wire>\n          <spirit:direction>in</spirit:direction>\n          <spirit:wireTypeDefs>\n            <spirit:wireTypeDef>\n              <spirit:typeName>std_logic</spirit:typeName>\n              <spirit:viewNameRef>xilinx_anylanguagesynthesis</spirit:viewNameRef>\n              <spirit:viewNameRef>xilinx_anylanguagebehavioralsimulation</spirit:viewNameRef>\n            </spirit:wireTypeDef>\n          </spirit:wireTypeDefs>\n        </spirit:wire>\n        <spirit:vendorExtensions>\n          <xilinx:portInfo>\n            <xilinx:enablement>\n              <xilinx:isEnabled xilinx:resolve=\"dependent\" xilinx:id=\"PORT_ENABLEMENT.I_data\" xilinx:dependency=\"(spirit:decode(id(&apos;PARAM_VALUE.SPI_BUS_WIDTH&apos;)) = 1)\">true</xilinx:isEnabled>\n            </xilinx:enablement>\n          </xilinx:portInfo>\n        </spirit:vendorExtensions>\n      </spirit:port>"
+
+    set port_o_data_old "      <spirit:port>\n        <spirit:name>O_data</spirit:name>\n        <spirit:wire>\n          <spirit:direction>out</spirit:direction>\n          <spirit:wireTypeDefs>\n            <spirit:wireTypeDef>\n              <spirit:typeName>std_logic</spirit:typeName>\n              <spirit:viewNameRef>xilinx_anylanguagesynthesis</spirit:viewNameRef>\n              <spirit:viewNameRef>xilinx_anylanguagebehavioralsimulation</spirit:viewNameRef>\n            </spirit:wireTypeDef>\n          </spirit:wireTypeDefs>\n        </spirit:wire>\n      </spirit:port>"
+    set port_o_data_new "      <spirit:port>\n        <spirit:name>O_data</spirit:name>\n        <spirit:wire>\n          <spirit:direction>out</spirit:direction>\n          <spirit:wireTypeDefs>\n            <spirit:wireTypeDef>\n              <spirit:typeName>std_logic</spirit:typeName>\n              <spirit:viewNameRef>xilinx_anylanguagesynthesis</spirit:viewNameRef>\n              <spirit:viewNameRef>xilinx_anylanguagebehavioralsimulation</spirit:viewNameRef>\n            </spirit:wireTypeDef>\n          </spirit:wireTypeDefs>\n        </spirit:wire>\n        <spirit:vendorExtensions>\n          <xilinx:portInfo>\n            <xilinx:enablement>\n              <xilinx:isEnabled xilinx:resolve=\"dependent\" xilinx:id=\"PORT_ENABLEMENT.O_data\" xilinx:dependency=\"(spirit:decode(id(&apos;PARAM_VALUE.SPI_BUS_WIDTH&apos;)) = 1)\">true</xilinx:isEnabled>\n            </xilinx:enablement>\n          </xilinx:portInfo>\n        </spirit:vendorExtensions>\n      </spirit:port>"
+
+    set port_io_dq_old "      <spirit:port>\n        <spirit:name>IO_dq</spirit:name>\n        <spirit:wire>\n          <spirit:direction>inout</spirit:direction>\n          <spirit:vector>\n            <spirit:left spirit:format=\"long\">3</spirit:left>\n            <spirit:right spirit:format=\"long\">0</spirit:right>\n          </spirit:vector>\n          <spirit:wireTypeDefs>\n            <spirit:wireTypeDef>\n              <spirit:typeName>std_logic_vector</spirit:typeName>\n              <spirit:viewNameRef>xilinx_anylanguagesynthesis</spirit:viewNameRef>\n              <spirit:viewNameRef>xilinx_anylanguagebehavioralsimulation</spirit:viewNameRef>\n            </spirit:wireTypeDef>\n          </spirit:wireTypeDefs>\n        </spirit:wire>\n      </spirit:port>"
+    set port_io_dq_new "      <spirit:port>\n        <spirit:name>IO_dq</spirit:name>\n        <spirit:wire>\n          <spirit:direction>inout</spirit:direction>\n          <spirit:vector>\n            <spirit:left spirit:format=\"long\">3</spirit:left>\n            <spirit:right spirit:format=\"long\">0</spirit:right>\n          </spirit:vector>\n          <spirit:wireTypeDefs>\n            <spirit:wireTypeDef>\n              <spirit:typeName>std_logic_vector</spirit:typeName>\n              <spirit:viewNameRef>xilinx_anylanguagesynthesis</spirit:viewNameRef>\n              <spirit:viewNameRef>xilinx_anylanguagebehavioralsimulation</spirit:viewNameRef>\n            </spirit:wireTypeDef>\n          </spirit:wireTypeDefs>\n        </spirit:wire>\n        <spirit:vendorExtensions>\n          <xilinx:portInfo>\n            <xilinx:enablement>\n              <xilinx:isEnabled xilinx:resolve=\"dependent\" xilinx:id=\"PORT_ENABLEMENT.IO_dq\" xilinx:dependency=\"(spirit:decode(id(&apos;PARAM_VALUE.SPI_BUS_WIDTH&apos;)) = 4)\">false</xilinx:isEnabled>\n            </xilinx:enablement>\n          </xilinx:portInfo>\n        </spirit:vendorExtensions>\n      </spirit:port>"
+
+    set comp_text [string map [list \
+        $port_i_data_old $port_i_data_new \
+        $port_o_data_old $port_o_data_new \
+        $port_io_dq_old $port_io_dq_new] $comp_text]
+
+    set fp_out [open $component_xml w]
+    puts -nonewline $fp_out $comp_text
+    close $fp_out
+}
+
 puts "INFO: Creating Vivado 2019.1 packaging project at '$tmp_prj'"
 create_project -force ${ip_name}_pack $tmp_prj -part $part_name
 
@@ -87,7 +135,7 @@ set_property name         $ip_name $core
 set_property version      $ip_version $core
 set_property display_name $ip_name $core
 set_property taxonomy     "/UserIP" $core
-set_property description  "AXI multiboot driver with FLASH_MODEL support for S25FL256S, MT25QL, and N25Q128A" $core
+set_property description  "AXI multiboot driver with SPI x1/x4 support for S25FL256S, MT25QL, and N25Q128A" $core
 
 set s00_axi_busif  [require_busif $core "S00_AXI" "s00_axi"]
 set s00_axi_clk    [require_busif $core "S00_AXI_CLK" "s00_axi_aclk"]
@@ -113,6 +161,10 @@ if {[lsearch -exact $user_param_names "FLASH_MODEL"] < 0} {
     error "FLASH_MODEL was not detected in packaged IP parameters."
 }
 
+if {[lsearch -exact $user_param_names "SPI_BUS_WIDTH"] < 0} {
+    error "SPI_BUS_WIDTH was not detected in packaged IP parameters."
+}
+
 if {[lsearch -exact $user_param_names "FLASH_TYPE"] >= 0} {
     error "Stale FLASH_TYPE parameter still exists after packaging."
 }
@@ -128,6 +180,13 @@ if {[llength $flash_model_param] != 0} {
     set flash_model_param [lindex $flash_model_param 0]
     set_property display_name "FLASH_MODEL" $flash_model_param
     set_property description "0=S25FL256S, 1=MT25QL(256/512), 2=N25Q128A" $flash_model_param
+}
+
+set spi_bus_width_param [ipx::get_user_parameters SPI_BUS_WIDTH -of_objects $core]
+if {[llength $spi_bus_width_param] != 0} {
+    set spi_bus_width_param [lindex $spi_bus_width_param 0]
+    set_property display_name "SPI_BUS_WIDTH" $spi_bus_width_param
+    set_property description "SPI data bus width: 1=standard SPI, 4=quad data phase (commands/address/status stay x1)." $spi_bus_width_param
 }
 
 set s25_tbparm_param [ipx::get_user_parameters S25_TBPARM_TOP -of_objects $core]
@@ -148,6 +207,8 @@ if {[file exists $xgui_v3]} {
 }
 
 patch_supported_families [file join $ip_root "component.xml"]
+patch_spi_bus_port_visibility [file join $ip_root "component.xml"]
+patch_flash_driver_fileset_membership [file join $ip_root "component.xml"]
 
 close_project
 
